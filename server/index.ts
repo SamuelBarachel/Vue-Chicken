@@ -8,6 +8,7 @@ import apiRouter from './api.js'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const app = express()
 const PORT = parseInt(process.env.PORT || '5000')
+const isDev = process.env.NODE_ENV !== 'production'
 
 app.use(express.json())
 
@@ -17,7 +18,7 @@ app.use(
     resave: false,
     saveUninitialized: false,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
+      secure: false,
       httpOnly: true,
       maxAge: 7 * 24 * 60 * 60 * 1000,
     },
@@ -33,11 +34,23 @@ app.get('/api/auth/user', async (req, res) => {
   res.json(user)
 })
 
-const distPath = path.join(__dirname, '../dist')
-app.use(express.static(distPath))
-app.get('*', (_req, res) => {
-  res.sendFile(path.join(distPath, 'index.html'))
-})
+if (isDev) {
+  const { createProxyMiddleware } = await import('http-proxy-middleware')
+  app.use(
+    '/',
+    createProxyMiddleware({
+      target: 'http://localhost:5173',
+      changeOrigin: true,
+      ws: true,
+    })
+  )
+} else {
+  const distPath = path.join(__dirname, '../dist')
+  app.use(express.static(distPath))
+  app.get('*', (_req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'))
+  })
+}
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`)
