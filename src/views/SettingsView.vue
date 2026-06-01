@@ -101,6 +101,100 @@
         </div>
       </div>
 
+      <!-- Notifications -->
+      <div class="settings-section">
+        <div class="settings-label">🔔 Notifications</div>
+        <div class="card card-sm">
+          <div v-if="!notifStore.supported" class="notif-unsupported">
+            Notifications are not supported in this browser.
+          </div>
+          <template v-else>
+            <!-- Permission row -->
+            <div v-if="notifStore.permission !== 'granted'" class="notif-permission-row">
+              <div class="notif-perm-text">
+                <div class="text-sm font-bold">Enable push notifications</div>
+                <div class="text-xs text-muted">Get reminders even when the app is closed</div>
+              </div>
+              <button class="btn btn-primary btn-sm" :disabled="notifStore.loading" @click="requestNotifPermission">
+                {{ notifStore.loading ? 'Requesting…' : 'Allow' }}
+              </button>
+            </div>
+            <div v-else class="notif-granted-badge">
+              <span class="notif-dot"></span>
+              <span class="text-xs" style="color:var(--green2);font-weight:700">Notifications enabled</span>
+            </div>
+
+            <div v-if="notifStore.permission === 'granted'" class="notif-settings">
+              <div class="divider" style="margin:10px 0"></div>
+
+              <!-- Egg reminder -->
+              <div class="notif-row">
+                <div class="notif-row-left">
+                  <div class="text-sm font-bold">🥚 Daily egg count reminder</div>
+                  <div class="text-xs text-muted">Alert if today's eggs haven't been logged</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" :checked="notifStore.prefs.eggReminderEnabled" @change="toggleEggReminder" />
+                  <span class="toggle-track"></span>
+                </label>
+              </div>
+
+              <div v-if="notifStore.prefs.eggReminderEnabled" class="notif-sub-row">
+                <label class="form-label" style="margin-bottom:6px">Remind me after</label>
+                <div class="toggle-row" style="max-width:220px">
+                  <button
+                    v-for="h in [14, 16, 18, 20]"
+                    :key="h"
+                    class="tgl-btn"
+                    :class="{ active: notifStore.prefs.eggReminderHour === h }"
+                    @click="setEggHour(h)"
+                  >{{ h === 14 ? '2 pm' : h === 16 ? '4 pm' : h === 18 ? '6 pm' : '8 pm' }}</button>
+                </div>
+              </div>
+
+              <div class="divider" style="margin:10px 0"></div>
+
+              <!-- Health check alerts -->
+              <div class="notif-row">
+                <div class="notif-row-left">
+                  <div class="text-sm font-bold">🩺 Health check alerts</div>
+                  <div class="text-xs text-muted">Remind when a treatment or vaccination is due</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" :checked="notifStore.prefs.healthAlertEnabled" @change="toggleHealthAlert" />
+                  <span class="toggle-track"></span>
+                </label>
+              </div>
+
+              <div v-if="notifStore.prefs.healthAlertEnabled" class="notif-sub-row">
+                <label class="form-label" style="margin-bottom:6px">Notify how far in advance</label>
+                <div class="toggle-row" style="max-width:220px">
+                  <button
+                    v-for="d in [0, 1, 2, 3]"
+                    :key="d"
+                    class="tgl-btn"
+                    :class="{ active: notifStore.prefs.healthAlertDaysAhead === d }"
+                    @click="setHealthDays(d)"
+                  >{{ d === 0 ? 'Same day' : d === 1 ? '1 day' : d + ' days' }}</button>
+                </div>
+              </div>
+
+              <div class="divider" style="margin:10px 0"></div>
+
+              <button class="data-action-btn" @click="testNotification">
+                <div class="da-icon" style="background:var(--amber-dim, rgba(245,166,35,.12))">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2.2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                </div>
+                <div class="flex-1">
+                  <div class="text-sm font-bold">Send test notification</div>
+                  <div class="text-xs text-muted">Make sure everything is working</div>
+                </div>
+              </button>
+            </div>
+          </template>
+        </div>
+      </div>
+
       <!-- Data management -->
       <div class="settings-section">
         <div class="settings-label">🗄️ Data Management</div>
@@ -183,6 +277,7 @@
 import { ref } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
 import { useAuthStore } from '@/stores/auth'
+import { useNotificationStore } from '@/stores/notifications'
 import { useBatchStore } from '@/stores/batches'
 import { useEggStore } from '@/stores/eggs'
 import { useExpenseStore } from '@/stores/expenses'
@@ -196,6 +291,35 @@ const settingsStore = useSettingsStore()
 const { settings, update } = settingsStore
 const authStore = useAuthStore()
 const user = authStore.user
+const notifStore = useNotificationStore()
+
+async function requestNotifPermission() {
+  await notifStore.requestPermission()
+}
+
+async function toggleEggReminder(e: Event) {
+  await notifStore.updatePrefs({ eggReminderEnabled: (e.target as HTMLInputElement).checked })
+}
+
+async function toggleHealthAlert(e: Event) {
+  await notifStore.updatePrefs({ healthAlertEnabled: (e.target as HTMLInputElement).checked })
+}
+
+async function setEggHour(h: number) {
+  await notifStore.updatePrefs({ eggReminderHour: h })
+}
+
+async function setHealthDays(d: number) {
+  await notifStore.updatePrefs({ healthAlertDaysAhead: d })
+}
+
+function testNotification() {
+  notifStore.showLocal(
+    '🐔 Vue Chicken — test',
+    'Notifications are working! You\'ll get reminders here.',
+    'test'
+  )
+}
 
 const batchStore = useBatchStore()
 const eggStore = useEggStore()
@@ -319,4 +443,32 @@ async function signOut() {
 .account-info { flex:1;min-width:0; }
 
 .app-info { text-align:center;padding:28px 20px; }
+
+/* Notifications */
+.notif-unsupported { font-size:13px;color:var(--text3);padding:10px 0; }
+
+.notif-permission-row { display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0; }
+.notif-perm-text { flex:1; }
+.btn-sm { padding:9px 16px;font-size:13px;border-radius:12px; }
+
+.notif-granted-badge { display:flex;align-items:center;gap:8px;padding:8px 0; }
+.notif-dot { width:8px;height:8px;border-radius:50%;background:var(--green2);box-shadow:0 0 6px var(--green2);flex-shrink:0; }
+
+.notif-row { display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 0; }
+.notif-row-left { flex:1; }
+.notif-sub-row { padding:4px 0 10px; }
+
+.toggle-switch { position:relative;display:inline-flex;align-items:center;cursor:pointer;flex-shrink:0; }
+.toggle-switch input { opacity:0;width:0;height:0;position:absolute; }
+.toggle-track {
+  width:44px;height:26px;background:var(--surface);border:1px solid var(--border);
+  border-radius:13px;transition:all .2s;position:relative;
+}
+.toggle-track::after {
+  content:'';position:absolute;top:3px;left:3px;
+  width:18px;height:18px;border-radius:50%;
+  background:var(--text3);transition:all .2s;
+}
+.toggle-switch input:checked + .toggle-track { background:var(--green2);border-color:var(--green2); }
+.toggle-switch input:checked + .toggle-track::after { transform:translateX(18px);background:#fff; }
 </style>
