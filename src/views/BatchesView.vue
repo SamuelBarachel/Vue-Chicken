@@ -4,13 +4,10 @@
       <div class="flex-between mb-3">
         <div>
           <div class="page-title">Batches</div>
-          <div class="page-subtitle">{{ batchStore.batches.length }} total</div>
+          <div class="page-subtitle">{{ batchStore.batches.length }} total · {{ batchStore.active.length }} active</div>
         </div>
-        <button class="btn btn-primary" style="padding: 10px 16px; font-size:13px" @click="$router.push('/batches/new')">
-          + New Batch
-        </button>
+        <button class="btn btn-primary btn-sm" @click="$router.push('/batches/new')">+ New</button>
       </div>
-      <!-- Filter chips -->
       <div class="chips-scroll">
         <button v-for="f in filters" :key="f.value" class="chip" :class="{ active: filter === f.value }" @click="filter = f.value">
           {{ f.label }}
@@ -19,75 +16,85 @@
     </div>
 
     <div class="section">
-      <div v-if="filtered.length === 0" class="empty-state">
-        <div class="empty-emoji">🐣</div>
-        <div class="empty-title">No batches yet</div>
-        <div class="empty-desc">Tap "+ New Batch" to add your first flock</div>
+      <div v-if="!filtered.length" class="empty-state">
+        <div class="empty-icon">🐣</div>
+        <div class="empty-title">No batches found</div>
+        <div class="empty-desc">{{ filter === 'all' ? 'Create your first batch to get started.' : 'No batches match this filter.' }}</div>
+        <button v-if="filter === 'all'" class="btn btn-primary mt-3" @click="$router.push('/batches/new')" style="margin:16px auto 0">+ Create Batch</button>
       </div>
+
       <div v-else class="batch-cards">
         <div
-          v-for="batch in filtered"
-          :key="batch.id"
-          class="batch-card card"
-          @click="$router.push(`/batches/${batch.id}`)"
+          v-for="b in filtered"
+          :key="b.id"
+          class="batch-card"
+          :class="b.mode === 'egg' ? 'bc-egg' : 'bc-meat'"
+          @click="$router.push(`/batches/${b.id}`)"
         >
-          <!-- Mode header stripe -->
-          <div class="batch-card-header" :class="batch.mode === 'egg' ? 'egg-stripe' : 'meat-stripe'">
-            <div class="batch-card-emoji">{{ batch.mode === 'egg' ? '🥚' : '🍗' }}</div>
-            <div class="flex-1">
-              <div class="font-bold" style="font-size:16px">{{ batch.name }}</div>
-              <div class="text-xs text-muted">{{ batch.breed }} · Started {{ formatDate(batch.startDate) }}</div>
+          <!-- Top stripe -->
+          <div class="bc-stripe" :class="b.mode === 'egg' ? 'stripe-egg' : 'stripe-meat'"></div>
+
+          <!-- Header -->
+          <div class="bc-head">
+            <div class="bc-emoji">{{ b.mode === 'egg' ? '🥚' : '🍗' }}</div>
+            <div class="flex-1 min-w-0">
+              <div class="bc-name">{{ b.name }}</div>
+              <div class="bc-breed">{{ b.breed || 'Unknown breed' }}</div>
             </div>
-            <div class="flex" style="flex-direction:column; align-items:flex-end; gap:4px">
-              <div class="badge" :class="'badge-' + batch.status">{{ batch.status }}</div>
-              <div class="badge" :class="batch.mode === 'egg' ? 'badge-egg' : 'badge-meat'">{{ batch.mode }}</div>
+            <div class="bc-badges">
+              <div class="badge" :class="'badge-' + b.status">{{ b.status }}</div>
             </div>
           </div>
 
-          <!-- Stats row -->
-          <div class="batch-stats">
-            <div class="bs-item">
-              <div class="bs-val">{{ batch.currentCount }}</div>
-              <div class="bs-lbl">Birds</div>
+          <!-- Metrics row -->
+          <div class="bc-metrics">
+            <div class="bc-metric">
+              <div class="bc-m-val">{{ b.currentCount.toLocaleString() }}</div>
+              <div class="bc-m-lbl">Birds</div>
             </div>
-            <div class="bs-div"></div>
-            <div class="bs-item">
-              <div class="bs-val">Wk {{ weeksOld(batch.startDate) }}</div>
-              <div class="bs-lbl">Age</div>
+            <div class="bc-mdiv"></div>
+            <div class="bc-metric">
+              <div class="bc-m-val">Wk {{ weeksOld(b.startDate) }}</div>
+              <div class="bc-m-lbl">Age</div>
             </div>
-            <div class="bs-div"></div>
-            <div class="bs-item">
-              <div class="bs-val" :class="batchPnl(batch.id) >= 0 ? 'profit-positive' : 'profit-negative'">
-                {{ batchPnl(batch.id) >= 0 ? '+' : '' }}{{ formatCurrency(batchPnl(batch.id), sym) }}
+            <div class="bc-mdiv"></div>
+            <div class="bc-metric">
+              <div class="bc-m-val" :class="batchPnl(b.id) >= 0 ? 'text-green' : 'text-red'">
+                {{ batchPnl(b.id) >= 0 ? '+' : '' }}{{ formatCurrency(batchPnl(b.id), sym) }}
               </div>
-              <div class="bs-lbl">P&L</div>
+              <div class="bc-m-lbl">P&L</div>
             </div>
-            <div class="bs-div"></div>
-            <div class="bs-item">
-              <div class="bs-val" :class="mortalityPct(batch) > 5 ? 'text-red' : 'text-green'">
-                {{ mortalityPct(batch).toFixed(1) }}%
+            <div class="bc-mdiv"></div>
+            <div class="bc-metric">
+              <div class="bc-m-val" :class="mortalityPct(b) > 5 ? 'text-red' : 'text-green'">
+                {{ mortalityPct(b).toFixed(1) }}%
               </div>
-              <div class="bs-lbl">Mortality</div>
+              <div class="bc-m-lbl">Mortality</div>
             </div>
           </div>
 
-          <!-- Egg production or weight bar -->
-          <div v-if="batch.mode === 'egg'" class="batch-footer">
-            <div class="text-xs text-muted">Production Rate</div>
-            <div class="flex-between mt-1">
-              <div class="text-xs font-bold text-amber">{{ productionRate(batch) }}%</div>
-              <div class="text-xs text-muted">{{ totalEggsForBatch(batch.id) }} total eggs</div>
-            </div>
-            <div class="progress-bar mt-1">
-              <div class="progress-fill" :style="{ width: productionRate(batch) + '%', background: 'var(--amber)' }"/>
-            </div>
-          </div>
-          <div v-else class="batch-footer">
-            <div class="flex-between">
-              <div class="text-xs text-muted">Latest avg weight</div>
-              <div class="text-xs font-bold text-amber">{{ latestWeight(batch.id) }}</div>
-            </div>
-            <div class="text-xs text-muted mt-1">Target: {{ batch.targetWeight || '—' }} {{ settings.weightUnit }}</div>
+          <!-- Footer -->
+          <div class="bc-footer">
+            <template v-if="b.mode === 'egg'">
+              <div class="bc-footer-row">
+                <div class="text-xxs text-dim font-bold" style="text-transform:uppercase;letter-spacing:.5px">Production Rate</div>
+                <div class="text-xs font-bold" style="color:var(--egg2)">{{ productionRate(b) }}%</div>
+              </div>
+              <div class="progress-bar mt-1">
+                <div class="progress-fill" :style="{ width: productionRate(b) + '%', background: 'linear-gradient(90deg, var(--egg), #D4A017)' }"/>
+              </div>
+              <div class="bc-footer-sub">{{ totalEggsForBatch(b.id).toLocaleString() }} eggs collected</div>
+            </template>
+            <template v-else>
+              <div class="bc-footer-row">
+                <div class="text-xxs text-dim font-bold" style="text-transform:uppercase;letter-spacing:.5px">Avg Weight</div>
+                <div class="text-xs font-bold" style="color:var(--meat2)">{{ latestWeight(b.id) }}</div>
+              </div>
+              <div class="bc-footer-row mt-1">
+                <div class="text-xxs text-dim">Target: {{ b.targetWeight || '—' }} {{ settings.weightUnit }}</div>
+                <div class="text-xxs text-dim">{{ b.targetAgeWeeks || '—' }}wk target age</div>
+              </div>
+            </template>
           </div>
         </div>
       </div>
@@ -116,64 +123,90 @@ const { settings } = useSettingsStore()
 const sym = computed(() => settings.currencySymbol)
 
 const filters = [
-  { label: 'All', value: 'all' },
-  { label: '🐔 Active', value: 'active' },
-  { label: '🥚 Egg', value: 'egg' },
-  { label: '🍗 Meat', value: 'meat' },
-  { label: '✅ Completed', value: 'completed' },
+  { label: 'All', value: 'all' }, { label: '🐔 Active', value: 'active' },
+  { label: '🥚 Egg', value: 'egg' }, { label: '🍗 Meat', value: 'meat' },
+  { label: '✅ Done', value: 'done' },
 ]
 const filter = ref('all')
 
 const filtered = computed(() => {
   const b = batchStore.batches
-  if (filter.value === 'all') return b
   if (filter.value === 'active') return b.filter(x => x.status === 'active')
   if (filter.value === 'egg') return b.filter(x => x.mode === 'egg')
   if (filter.value === 'meat') return b.filter(x => x.mode === 'meat')
-  if (filter.value === 'completed') return b.filter(x => x.status === 'completed' || x.status === 'sold')
+  if (filter.value === 'done') return b.filter(x => x.status !== 'active')
   return b
 })
 
-function batchPnl(batchId: string) {
-  const rev = revenueStore.revenues.filter(r => r.batchId === batchId).reduce((s, r) => s + r.amount, 0)
-  const exp = expenseStore.expenses.filter(e => e.batchId === batchId).reduce((s, e) => s + e.amount, 0)
+function batchPnl(id: string) {
+  const rev = revenueStore.revenues.filter(r => r.batchId === id).reduce((s, r) => s + r.amount, 0)
+  const exp = expenseStore.expenses.filter(e => e.batchId === id).reduce((s, e) => s + e.amount, 0)
   return rev - exp
 }
-
-function mortalityPct(batch: any) {
-  const dead = mortalityStore.records.filter(r => r.batchId === batch.id).reduce((s, r) => s + r.count, 0)
-  return pctNum(dead, batch.initialCount)
+function mortalityPct(b: any) {
+  const dead = mortalityStore.records.filter(r => r.batchId === b.id).reduce((s, r) => s + r.count, 0)
+  return pctNum(dead, b.initialCount)
 }
-
-function totalEggsForBatch(batchId: string) {
-  return eggStore.collections.filter(c => c.batchId === batchId).reduce((s, c) => s + c.totalEggs, 0)
+function totalEggsForBatch(id: string) {
+  return eggStore.collections.filter(c => c.batchId === id).reduce((s, c) => s + c.totalEggs, 0)
 }
-
-function productionRate(batch: any) {
-  const daysSinceStart = Math.max(1, Math.floor((Date.now() - new Date(batch.startDate).getTime()) / 86400000))
-  const expected = batch.currentCount * daysSinceStart
-  const total = totalEggsForBatch(batch.id)
-  return Math.min(100, pctNum(total, expected)).toFixed(0)
+function productionRate(b: any) {
+  const days = Math.max(1, Math.floor((Date.now() - new Date(b.startDate).getTime()) / 86400000))
+  const expected = b.currentCount * days
+  return Math.min(100, pctNum(totalEggsForBatch(b.id), expected)).toFixed(0)
 }
-
-function latestWeight(batchId: string) {
-  const latest = weightStore.records.filter(r => r.batchId === batchId).sort((a, b) => b.date.localeCompare(a.date))[0]
-  return latest ? `${latest.averageWeight} ${settings.weightUnit}` : '—'
+function latestWeight(id: string) {
+  const r = weightStore.records.filter(r => r.batchId === id).sort((a, b) => b.date.localeCompare(a.date))[0]
+  return r ? `${r.averageWeight} ${settings.weightUnit}` : '— kg'
 }
 </script>
 
 <style scoped>
 .batch-cards { display: flex; flex-direction: column; gap: 12px; }
-.batch-card { padding: 0; overflow: hidden; cursor: pointer; transition: border-color 0.15s; }
-.batch-card:active { border-color: var(--amber); }
-.batch-card-header { display: flex; align-items: flex-start; gap: 12px; padding: 14px 14px 12px; }
-.egg-stripe { border-bottom: 1px solid rgba(234,179,8,0.1); }
-.meat-stripe { border-bottom: 1px solid rgba(239,68,68,0.1); }
-.batch-card-emoji { font-size: 26px; line-height: 1; }
-.batch-stats { display: flex; align-items: center; padding: 10px 14px; gap: 0; }
-.bs-item { flex: 1; text-align: center; }
-.bs-val { font-size: 14px; font-weight: 700; color: var(--text); }
-.bs-lbl { font-size: 10px; color: var(--text3); font-weight: 500; margin-top: 2px; }
-.bs-div { width: 1px; height: 28px; background: var(--border); }
-.batch-footer { padding: 10px 14px 14px; border-top: 1px solid var(--border); }
+.min-w-0 { min-width: 0; }
+
+.batch-card {
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.batch-card:active { transform: scale(0.98); }
+.bc-egg:active { border-color: var(--egg); }
+.bc-meat:active { border-color: var(--meat); }
+
+.bc-stripe { height: 3px; width: 100%; }
+.stripe-egg { background: linear-gradient(90deg, var(--egg) 0%, #FCD34D 100%); }
+.stripe-meat { background: linear-gradient(90deg, var(--meat) 0%, #FF6B6B 100%); }
+
+.bc-head {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 16px 12px;
+}
+.bc-emoji { font-size: 28px; line-height: 1; flex-shrink: 0; margin-top: 2px; }
+.bc-name { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bc-breed { font-size: 12px; color: var(--text3); font-weight: 500; margin-top: 2px; }
+.bc-badges { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; flex-shrink: 0; }
+
+.bc-metrics {
+  display: flex;
+  align-items: center;
+  padding: 10px 16px;
+  background: rgba(0,0,0,0.15);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+.bc-metric { flex: 1; text-align: center; }
+.bc-m-val { font-size: 14px; font-weight: 800; letter-spacing: -0.3px; }
+.bc-m-lbl { font-size: 9px; color: var(--text3); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
+.bc-mdiv { width: 1px; height: 30px; background: var(--border2); }
+
+.bc-footer { padding: 12px 16px 14px; }
+.bc-footer-row { display: flex; justify-content: space-between; align-items: center; }
+.bc-footer-sub { font-size: 11px; color: var(--text3); margin-top: 5px; font-weight: 500; }
 </style>
