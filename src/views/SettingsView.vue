@@ -311,9 +311,9 @@
         <div class="settings-label">👤 Account</div>
         <div class="card card-sm">
           <div class="account-row" v-if="user">
-            <div class="account-avatar">{{ user.displayName?.[0] || '?' }}</div>
+            <div class="account-avatar">{{ user.username?.[0]?.toUpperCase() || '?' }}</div>
             <div class="account-info">
-              <div class="text-sm font-bold">{{ user.displayName || 'Unknown' }}</div>
+              <div class="text-sm font-bold">{{ user.username || 'Unknown' }}</div>
               <div class="text-xs text-muted">{{ user.email }}</div>
             </div>
           </div>

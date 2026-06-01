@@ -290,7 +290,7 @@ const revForm = ref({ type:'eggs' as any, quantity:0, unitPrice:0, date:today(),
 function logActivity(category: Parameters<typeof activityLogStore.log>[0], description: string) {
   const u = authStore.user
   if (!u) return
-  activityLogStore.log(category, description, u, { batchId: selectedBatchId.value, batchName: selectedBatch.value?.name })
+  activityLogStore.log(category, description, { uid: u.id, displayName: u.username, email: u.email || null, photoURL: u.profileImage || null }, { batchId: selectedBatchId.value, batchName: selectedBatch.value?.name })
 }
 
 function saveExpense() {

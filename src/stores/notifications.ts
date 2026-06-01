@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, reactive } from 'vue'
-import { doc, onSnapshot, setDoc } from 'firebase/firestore'
-import { db } from '@/firebase'
+import { api } from '@/api'
 
 export interface NotificationPrefs {
   eggReminderEnabled: boolean
@@ -34,9 +33,6 @@ export const useNotificationStore = defineStore('notifications', () => {
   const loading = ref(false)
   const supported = ref(false)
 
-  let uid: string | null = null
-  let unsubscribe: (() => void) | null = null
-
   function checkSupport() {
     supported.value = 'Notification' in window && 'serviceWorker' in navigator
     if (supported.value) {
@@ -44,22 +40,19 @@ export const useNotificationStore = defineStore('notifications', () => {
     }
   }
 
-  function init(userId: string | null) {
-    if (unsubscribe) { unsubscribe(); unsubscribe = null }
-    uid = userId
+  async function init(_uid: string | null) {
     checkSupport()
-    if (!uid) {
+    if (!_uid) {
       Object.assign(prefs, DEFAULTS)
       fcmToken.value = null
       return
     }
-    unsubscribe = onSnapshot(doc(db, 'users', uid, 'meta', 'notificationPrefs'), snap => {
-      if (snap.exists()) {
-        Object.assign(prefs, { ...DEFAULTS, ...snap.data() as NotificationPrefs })
-      } else {
-        Object.assign(prefs, DEFAULTS)
-      }
-    })
+    try {
+      const data = await api.get('/notification-prefs')
+      Object.assign(prefs, { ...DEFAULTS, ...data })
+    } catch (e) {
+      Object.assign(prefs, DEFAULTS)
+    }
   }
 
   async function requestPermission(): Promise<boolean> {
@@ -68,43 +61,18 @@ export const useNotificationStore = defineStore('notifications', () => {
     try {
       const result = await Notification.requestPermission()
       permission.value = result
-      if (result === 'granted') {
-        await registerFCM()
-        return true
-      }
-      return false
+      return result === 'granted'
     } finally {
       loading.value = false
     }
   }
 
-  async function registerFCM() {
-    try {
-      const { getMessaging, getToken } = await import('firebase/messaging')
-      const messaging = getMessaging()
-      const swReg = await navigator.serviceWorker.ready
-      const vapidKey = import.meta.env.VITE_FIREBASE_VAPID_KEY as string | undefined
-      const token = await getToken(messaging, {
-        serviceWorkerRegistration: swReg,
-        ...(vapidKey ? { vapidKey } : {}),
-      })
-      fcmToken.value = token
-      if (uid && token) {
-        await setDoc(
-          doc(db, 'users', uid, 'meta', 'fcmTokens'),
-          { token, updatedAt: Date.now() },
-          { merge: true }
-        )
-      }
-    } catch (e) {
-      console.warn('[FCM] Could not get token:', e)
-    }
-  }
-
   async function updatePrefs(patch: Partial<NotificationPrefs>) {
     Object.assign(prefs, patch)
-    if (uid) {
-      await setDoc(doc(db, 'users', uid, 'meta', 'notificationPrefs'), { ...prefs })
+    try {
+      await api.post('/notification-prefs', { ...prefs })
+    } catch (e) {
+      console.error('updatePrefs', e)
     }
   }
 
@@ -135,6 +103,5 @@ export const useNotificationStore = defineStore('notifications', () => {
     requestPermission,
     updatePrefs,
     showLocal,
-    registerFCM,
   }
 })

@@ -1,48 +1,45 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { User } from 'firebase/auth'
-import {
-  GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
-  signOut as fbSignOut,
-} from 'firebase/auth'
-import { auth } from '@/firebase'
+
+export interface AuthUser {
+  id: string
+  username: string
+  email?: string
+  profileImage?: string
+}
 
 export const useAuthStore = defineStore('auth', () => {
-  const user = ref<User | null>(null)
+  const user = ref<AuthUser | null>(null)
   const uid = ref<string | null>(null)
   const ready = ref(false)
   const redirectError = ref('')
 
-  function setUser(u: User | null) {
-    user.value = u
-    uid.value = u?.uid ?? null
-    ready.value = true
-  }
-
-  async function signInWithGoogle() {
-    const provider = new GoogleAuthProvider()
-    provider.setCustomParameters({ prompt: 'select_account' })
-    await signInWithRedirect(auth, provider)
-  }
-
-  async function checkRedirectResult() {
+  async function loadUser() {
     try {
-      await getRedirectResult(auth)
-    } catch (e: any) {
-      const c = e?.code || ''
-      if (c === 'auth/unauthorized-domain') {
-        redirectError.value = 'UNAUTHORIZED_DOMAIN'
-      } else if (c && c !== 'auth/null-user') {
-        redirectError.value = e.message || 'Sign-in failed.'
+      const res = await fetch('/api/auth/user')
+      const data = await res.json()
+      if (data && data.id) {
+        user.value = data
+        uid.value = data.id
+      } else {
+        user.value = null
+        uid.value = null
       }
+    } catch {
+      user.value = null
+      uid.value = null
+    } finally {
+      ready.value = true
     }
   }
 
-  async function signOut() {
-    await fbSignOut(auth)
+  function signIn() {
+    window.location.href = '/api/auth/login'
   }
 
-  return { user, uid, ready, redirectError, setUser, signInWithGoogle, checkRedirectResult, signOut }
+  function signOut() {
+    window.location.href = '/api/auth/logout'
+  }
+
+  return { user, uid, ready, redirectError, loadUser, signIn, signOut }
 })

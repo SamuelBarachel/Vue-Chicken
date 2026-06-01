@@ -616,7 +616,7 @@ function feedRateBadgeClass(rec: { quantityKg: number; durationDays: number }) {
 function logActivity(category: Parameters<typeof activityLogStore.log>[0], description: string) {
   const u = authStore.user
   if (!u) return
-  activityLogStore.log(category, description, u, { batchId: id.value, batchName: batch.value?.name })
+  activityLogStore.log(category, description, { uid: u.id, displayName: u.username, email: u.email || null, photoURL: u.profileImage || null }, { batchId: id.value, batchName: batch.value?.name })
 }
 
 const totalExp = computed(() => batchExpenses.value.reduce((s,e) => s+e.amount, 0))

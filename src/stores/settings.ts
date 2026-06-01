@@ -1,8 +1,7 @@
 import { defineStore } from 'pinia'
 import { reactive } from 'vue'
 import type { AppSettings } from '@/types'
-import { doc, onSnapshot, setDoc } from 'firebase/firestore'
-import { db } from '@/firebase'
+import { api } from '@/api'
 
 const DEFAULT: AppSettings = {
   currency: 'ZiG',
@@ -14,27 +13,23 @@ const DEFAULT: AppSettings = {
 
 export const useSettingsStore = defineStore('settings', () => {
   const settings = reactive<AppSettings>({ ...DEFAULT })
-  let uid: string | null = null
-  let unsubscribe: (() => void) | null = null
 
-  function init(userId: string | null) {
-    if (unsubscribe) { unsubscribe(); unsubscribe = null }
-    uid = userId
-    if (!uid) { Object.assign(settings, DEFAULT); return }
-    unsubscribe = onSnapshot(doc(db, 'users', uid, 'meta', 'settings'), snap => {
-      if (snap.exists()) {
-        Object.assign(settings, { ...DEFAULT, ...snap.data() as AppSettings })
-      } else {
-        Object.assign(settings, DEFAULT)
-        setDoc(doc(db, 'users', uid!, 'meta', 'settings'), DEFAULT)
-      }
-    })
+  async function init(_uid: string | null) {
+    if (!_uid) { Object.assign(settings, DEFAULT); return }
+    try {
+      const data = await api.get('/settings')
+      Object.assign(settings, { ...DEFAULT, ...data })
+    } catch {
+      Object.assign(settings, DEFAULT)
+    }
   }
 
   async function update(patch: Partial<AppSettings>) {
     Object.assign(settings, patch)
-    if (uid) {
-      await setDoc(doc(db, 'users', uid, 'meta', 'settings'), { ...settings })
+    try {
+      await api.post('/settings', { ...settings })
+    } catch (e) {
+      console.error('settings update', e)
     }
   }
 

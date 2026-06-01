@@ -1,38 +1,34 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Expense } from '@/types'
-import { collection, onSnapshot, addDoc, deleteDoc, doc, setDoc } from 'firebase/firestore'
-import { db } from '@/firebase'
+import { api } from '@/api'
 
 export const useExpenseStore = defineStore('expenses', () => {
   const expenses = ref<Expense[]>([])
-  let uid: string | null = null
-  let unsubscribe: (() => void) | null = null
 
-  function init(userId: string | null) {
-    if (unsubscribe) { unsubscribe(); unsubscribe = null }
-    uid = userId
-    if (!uid) { expenses.value = []; return }
-    unsubscribe = onSnapshot(collection(db, 'users', uid, 'expenses'), snap => {
-      expenses.value = snap.docs
-        .map(d => ({ id: d.id, ...d.data() } as Expense))
-        .sort((a, b) => (b as any)._ts - (a as any)._ts)
-    })
+  async function init(_uid: string | null) {
+    if (!_uid) { expenses.value = []; return }
+    try {
+      expenses.value = await api.get('/expenses')
+    } catch (e) {
+      console.error('expenses init', e)
+    }
   }
 
   async function add(data: Omit<Expense, 'id'>) {
-    if (!uid) return
-    await addDoc(collection(db, 'users', uid, 'expenses'), { ...data, _ts: Date.now() })
+    const created = await api.post('/expenses', data)
+    expenses.value.unshift(created)
   }
 
   async function remove(id: string) {
-    if (!uid) return
-    await deleteDoc(doc(db, 'users', uid, 'expenses', id))
+    await api.delete(`/expenses/${id}`)
+    expenses.value = expenses.value.filter(e => e.id !== id)
   }
 
   async function update(id: string, patch: Partial<Expense>) {
-    if (!uid) return
-    await setDoc(doc(db, 'users', uid, 'expenses', id), patch, { merge: true })
+    const updated = await api.patch(`/expenses/${id}`, patch)
+    const idx = expenses.value.findIndex(e => e.id === id)
+    if (idx !== -1) expenses.value[idx] = { ...expenses.value[idx], ...updated }
   }
 
   function forBatch(batchId: string) {

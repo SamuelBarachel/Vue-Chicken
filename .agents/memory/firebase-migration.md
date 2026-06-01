@@ -1,16 +1,25 @@
 ---
-name: Firebase Firestore migration
-description: How all Pinia stores are structured after migrating from localStorage to Firestore
+name: Firebase to Replit migration
+description: Full migration from Firebase Auth + Firestore to Replit Auth + PostgreSQL; architecture of the backend server and store pattern
 ---
 
-Each data store exports an `init(uid: string | null)` function. App.vue calls `initStores(uid)` inside `onAuthStateChanged` to start/stop Firestore listeners.
+This project was fully migrated from Firebase (Auth + Firestore) to Replit (Auth + PostgreSQL).
 
-Data lives under `/users/{uid}/{collection}/{docId}`. Settings lives at `/users/{uid}/meta/settings` (single doc).
+## Architecture
+- **Backend**: Express server at `server/index.ts`, runs on port 5000, serves built Vue SPA from `dist/`
+- **Auth**: Replit OIDC via `server/replitAuth.ts` — login at `/api/auth/login`, callback at `/api/auth/callback`, logout at `/api/auth/logout`; session stored via `express-session`; issuer URL read from `ISSUER_URL` env var (allows test override)
+- **Database**: Replit PostgreSQL via `server/db.ts` (pg Pool); all REST routes in `server/api.ts`
+- **Frontend**: Vue 3 + Pinia stores in `src/stores/`; all Firebase imports removed; data fetched via `src/api.ts` (fetch wrapper to `/api/*`)
 
-Each doc has a `_ts: Date.now()` field added on write for client-side sort order.
+## Store pattern
+Each store has `init(uid: string | null)` called from `App.vue` after auth check. Stores use `api.get/post/patch/delete` to REST endpoints. No real-time listeners (polling not needed — data loads on mount).
 
-Stores are async: `add()` returns Promise, `remove()` and `update()` return Promise<void>. AddBatchView.save() is async and awaits add().
+## Auth pattern in App.vue
+`onMounted` → `authStore.loadUser()` (fetches `/api/auth/user`) → if uid, calls `initStores(uid)` with `Promise.all` across all stores.
 
-**Why:** Firestore is async and real-time; the init(uid) pattern avoids circular imports between auth store and data stores. App.vue is the orchestrator.
+## Database schema tables
+users, batches, eggs, expenses, revenue, mortality, weights, environment_logs, health_records, feed_stock, activity_log, settings, notification_prefs
 
-**How to apply:** Any new store must follow the same pattern: local ref state + init(uid) + onSnapshot listener + async CRUD.
+**Why:** Firestore was replaced because Replit's security model requires server-side data access, not client-side Firebase SDKs. Auth was replaced because Replit Auth integrates natively.
+
+**How to apply:** New data collections need: (1) a table in Postgres, (2) CRUD routes in `server/api.ts`, (3) a Pinia store in `src/stores/` using `api.*` helpers.

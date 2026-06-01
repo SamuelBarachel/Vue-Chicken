@@ -1,2 +1,2 @@
-- [Firebase Firestore migration](firebase-migration.md) — all 9 stores migrated from localStorage to Firestore; stores use init(uid) pattern called from App.vue
+- [Firebase to Replit migration](firebase-migration.md) — full architecture: Express+Replit Auth+PostgreSQL backend; Vue SPA frontend; store pattern uses init(uid)+REST api calls
 - [Settings store reactive pattern](settings-store-pattern.md) — settings store uses reactive<AppSettings> not ref, so destructuring const { settings } = useSettingsStore() gives live reactive proxy
