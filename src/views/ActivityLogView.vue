@@ -11,7 +11,24 @@
         </button>
       </div>
 
-      <!-- Category filter -->
+      <!-- Search bar -->
+      <div class="search-wrap mb-2">
+        <div class="search-icon">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+        </div>
+        <input
+          v-model="searchQuery"
+          class="search-input"
+          placeholder="Search actions, batches, users…"
+          type="search"
+          autocomplete="off"
+        />
+        <button v-if="searchQuery" class="search-clear" @click="searchQuery = ''">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Category filter pills -->
       <div class="filter-scroll">
         <button
           v-for="f in filters"
@@ -24,10 +41,10 @@
     </div>
 
     <!-- Stats bar -->
-    <div class="section mb-0" style="padding-bottom:0">
+    <div class="section" style="padding-bottom:0">
       <div class="activity-stats">
         <div class="astat">
-          <div class="astat-val">{{ filteredEntries.length }}</div>
+          <div class="astat-val">{{ visibleEntries.length }}</div>
           <div class="astat-lbl">Actions</div>
         </div>
         <div class="astat-div"></div>
@@ -42,13 +59,13 @@
         </div>
         <div class="astat-div"></div>
         <div class="astat">
-          <div class="astat-val">{{ uniqueBatches }}</div>
+          <div class="astat-val">{{ uniqueBatchCount }}</div>
           <div class="astat-lbl">Batches</div>
         </div>
       </div>
     </div>
 
-    <!-- Empty state -->
+    <!-- Empty: no activity at all -->
     <div v-if="!activityStore.entries.length" class="section">
       <div class="empty-state" style="padding:48px 0">
         <div class="empty-icon">📋</div>
@@ -58,8 +75,21 @@
       </div>
     </div>
 
-    <!-- Timeline grouped by date -->
+    <!-- Timeline -->
     <div v-else class="section">
+
+      <!-- No-results state -->
+      <div v-if="!visibleEntries.length" class="empty-state" style="padding:40px 0">
+        <div class="empty-icon" style="font-size:32px">🔍</div>
+        <div class="empty-title" style="font-size:16px">No results</div>
+        <div class="empty-desc">
+          <span v-if="searchQuery">Nothing matched "<strong>{{ searchQuery }}</strong>"</span>
+          <span v-else>No {{ activeFilter }} entries found</span>
+        </div>
+        <button class="btn btn-ghost btn-sm mt-3" @click="searchQuery = ''; activeFilter = 'all'">Clear filters</button>
+      </div>
+
+      <!-- Grouped timeline -->
       <div v-for="group in groupedEntries" :key="group.date" class="date-group">
         <div class="date-header">
           <div class="date-line"></div>
@@ -67,7 +97,7 @@
           <div class="date-line"></div>
         </div>
 
-        <div class="timeline-list card" style="padding:4px 14px">
+        <div class="card" style="padding:4px 14px">
           <div
             v-for="entry in group.entries"
             :key="entry.id"
@@ -81,26 +111,23 @@
             </div>
 
             <!-- Content -->
-            <div class="tl-content flex-1 min-w-0">
+            <div class="tl-body">
               <div class="tl-desc">{{ entry.description }}</div>
               <div class="tl-meta">
                 <span v-if="entry.batchName" class="batch-chip">{{ entry.batchName }}</span>
+                <span class="tl-who">{{ entry.userName }}</span>
+                <span class="tl-dot">·</span>
                 <span class="tl-time">{{ formatTime(entry.timestamp) }}</span>
               </div>
             </div>
 
             <!-- User avatar -->
             <div class="tl-user" :title="entry.userName">
-              <img v-if="entry.userPhoto" :src="entry.userPhoto" :alt="entry.userName" class="user-avatar" />
+              <img v-if="entry.userPhoto" :src="entry.userPhoto" :alt="entry.userName" class="user-avatar" referrerpolicy="no-referrer" />
               <div v-else class="user-initial">{{ userInitial(entry.userName) }}</div>
             </div>
           </div>
         </div>
-      </div>
-
-      <div v-if="filteredEntries.length === 0 && activityStore.entries.length > 0" class="empty-state" style="padding:32px 0">
-        <div class="empty-icon" style="font-size:32px">🔍</div>
-        <div class="empty-desc">No {{ activeFilter }} entries found</div>
       </div>
     </div>
   </div>
@@ -113,6 +140,7 @@ import type { ActivityCategory } from '@/types'
 
 const activityStore = useActivityLogStore()
 
+const searchQuery = ref('')
 const activeFilter = ref<ActivityCategory | 'all'>('all')
 
 const filters = [
@@ -128,15 +156,26 @@ const filters = [
   { id: 'batch', icon: '🐔', label: 'Batches' },
 ] as const
 
-const filteredEntries = computed(() =>
+const filteredByCategory = computed(() =>
   activeFilter.value === 'all'
     ? activityStore.entries
     : activityStore.entries.filter(e => e.category === activeFilter.value)
 )
 
+const visibleEntries = computed(() => {
+  const q = searchQuery.value.trim().toLowerCase()
+  if (!q) return filteredByCategory.value
+  return filteredByCategory.value.filter(e =>
+    e.description.toLowerCase().includes(q) ||
+    (e.batchName || '').toLowerCase().includes(q) ||
+    e.userName.toLowerCase().includes(q) ||
+    e.userEmail.toLowerCase().includes(q)
+  )
+})
+
 const groupedEntries = computed(() => {
   const groups: Record<string, typeof activityStore.entries> = {}
-  filteredEntries.value.forEach(e => {
+  visibleEntries.value.forEach(e => {
     if (!groups[e.date]) groups[e.date] = []
     groups[e.date].push(e)
   })
@@ -145,17 +184,17 @@ const groupedEntries = computed(() => {
     .map(([date, entries]) => ({ date, entries }))
 })
 
-const today = new Date().toISOString().slice(0, 10)
-const todayCount = computed(() => activityStore.entries.filter(e => e.date === today).length)
+const todayStr = new Date().toISOString().slice(0, 10)
+const todayCount = computed(() => activityStore.entries.filter(e => e.date === todayStr).length)
 const uniqueUsers = computed(() => [...new Set(activityStore.entries.map(e => e.userId))])
-const uniqueBatches = computed(() => new Set(activityStore.entries.filter(e => e.batchId).map(e => e.batchId)).size)
+const uniqueBatchCount = computed(() => new Set(activityStore.entries.filter(e => e.batchId).map(e => e.batchId)).size)
 
 function formatGroupDate(dateStr: string) {
-  if (dateStr === today) return 'Today'
+  if (dateStr === todayStr) return 'Today'
   const yesterday = new Date()
   yesterday.setDate(yesterday.getDate() - 1)
   if (dateStr === yesterday.toISOString().slice(0, 10)) return 'Yesterday'
-  const d = new Date(dateStr)
+  const d = new Date(dateStr + 'T00:00:00')
   return d.toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' })
 }
 
@@ -192,15 +231,62 @@ function getCatBg(cat: ActivityCategory) {
 </script>
 
 <style scoped>
+/* Search */
+.search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+.search-input {
+  width: 100%;
+  background: var(--surface);
+  border: 1.5px solid var(--border2);
+  border-radius: 12px;
+  padding: 10px 36px 10px 36px;
+  font-size: 14px;
+  color: var(--text);
+  font-family: inherit;
+  font-weight: 500;
+  outline: none;
+  transition: border-color 0.18s;
+  -webkit-appearance: none;
+}
+.search-input:focus { border-color: var(--amber); }
+.search-input::placeholder { color: var(--text3); }
+.search-input::-webkit-search-cancel-button { display: none; }
+.search-clear {
+  position: absolute;
+  right: 10px;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: var(--card2);
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Category filters */
 .filter-scroll {
   display: flex;
   gap: 6px;
   overflow-x: auto;
-  padding: 10px 0 2px;
+  padding: 2px 0 4px;
   scrollbar-width: none;
 }
 .filter-scroll::-webkit-scrollbar { display: none; }
-
 .filter-pill {
   flex-shrink: 0;
   padding: 6px 12px;
@@ -213,6 +299,7 @@ function getCatBg(cat: ActivityCategory) {
   cursor: pointer;
   transition: all 0.18s;
   white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
 }
 .filter-pill.pill-active {
   background: var(--amber);
@@ -220,6 +307,7 @@ function getCatBg(cat: ActivityCategory) {
   color: #000;
 }
 
+/* Stats bar */
 .activity-stats {
   display: flex;
   align-items: center;
@@ -227,13 +315,14 @@ function getCatBg(cat: ActivityCategory) {
   border: 1px solid var(--border);
   border-radius: 16px;
   padding: 14px 0;
-  margin-bottom: 12px;
+  margin-bottom: 4px;
 }
 .astat { flex: 1; text-align: center; }
 .astat-val { font-size: 20px; font-weight: 900; letter-spacing: -0.5px; }
 .astat-lbl { font-size: 10px; color: var(--text3); font-weight: 700; text-transform: uppercase; letter-spacing: .5px; margin-top: 2px; }
 .astat-div { width: 1px; height: 32px; background: var(--border); }
 
+/* Timeline */
 .date-group { margin-bottom: 4px; }
 .date-header { display: flex; align-items: center; gap: 10px; padding: 14px 0 8px; }
 .date-line { flex: 1; height: 1px; background: var(--border); }
@@ -261,19 +350,28 @@ function getCatBg(cat: ActivityCategory) {
   flex-shrink: 0;
 }
 
+.tl-body {
+  flex: 1;
+  min-width: 0;
+}
+
 .tl-desc {
   font-size: 13px;
   font-weight: 600;
-  color: var(--text1);
+  color: var(--text);
   line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tl-meta {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
   margin-top: 3px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow: hidden;
 }
 
 .batch-chip {
@@ -283,13 +381,31 @@ function getCatBg(cat: ActivityCategory) {
   color: var(--amber);
   border-radius: 6px;
   padding: 2px 7px;
-  letter-spacing: .2px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.tl-who {
+  font-size: 11px;
+  color: var(--text2);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+}
+
+.tl-dot {
+  font-size: 11px;
+  color: var(--text3);
+  flex-shrink: 0;
 }
 
 .tl-time {
   font-size: 11px;
   color: var(--text3);
   font-weight: 600;
+  flex-shrink: 0;
 }
 
 .tl-user { flex-shrink: 0; }
@@ -300,6 +416,7 @@ function getCatBg(cat: ActivityCategory) {
   border-radius: 50%;
   object-fit: cover;
   border: 1.5px solid var(--border2);
+  display: block;
 }
 
 .user-initial {
@@ -313,8 +430,5 @@ function getCatBg(cat: ActivityCategory) {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1.5px solid var(--amber-glow2);
 }
-
-.min-w-0 { min-width: 0; }
 </style>
