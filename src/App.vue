@@ -7,26 +7,7 @@
 
     <!-- Login screen -->
     <div v-else-if="!authStore.uid" class="login-screen">
-      <div v-if="authMode === 'reset'" class="login-card">
-        <!-- Reset password -->
-        <button class="reset-back" @click="authMode = 'signin'">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          Back
-        </button>
-        <div class="reset-icon">🔑</div>
-        <div class="reset-title">Reset Password</div>
-        <div class="reset-desc">Enter your email and we'll send you a reset link right away.</div>
-        <input v-model="email" class="auth-input" type="email" placeholder="Email address" autocomplete="email" @keydown.enter="sendReset" />
-        <button class="auth-btn-gold" @click="sendReset" :disabled="busy || !email">
-          <span v-if="busy" class="auth-spinner gold-spin"></span>
-          {{ busy ? 'Sending…' : 'Send Reset Link' }}
-        </button>
-        <div v-if="errorMsg" class="auth-msg auth-error">{{ errorMsg }}</div>
-        <div v-if="successMsg" class="auth-msg auth-success">{{ successMsg }}</div>
-      </div>
-
-      <div v-else class="login-card">
-        <!-- Gemini gradient bar -->
+      <div class="login-card">
         <div class="gem-bar"></div>
 
         <div class="login-logo-area">
@@ -35,35 +16,22 @@
           <div class="login-subtitle">Poultry farm manager</div>
         </div>
 
-        <!-- Google first (primary) -->
+        <p class="login-desc">Sign in to access your farm — or create a new one.</p>
+
         <button class="google-btn" @click="signInGoogle" :disabled="busy">
-          <svg width="18" height="18" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
+          <svg v-if="!busy" width="20" height="20" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0">
             <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
             <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
             <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
           </svg>
-          <span v-if="busy && googleBusy" class="auth-spinner dark-spin"></span>
-          <span v-else>Continue with Google</span>
+          <span v-if="busy" class="google-spinner"></span>
+          {{ busy ? 'Opening Google…' : 'Continue with Google' }}
         </button>
 
-        <div class="auth-divider"><span>or sign in with email</span></div>
+        <div v-if="errorMsg" class="auth-error">{{ errorMsg }}</div>
 
-        <!-- Email/password -->
-        <div class="email-form">
-          <input v-model="email" class="auth-input" type="email" placeholder="Email address" autocomplete="email" />
-          <div class="password-wrap">
-            <input v-model="password" class="auth-input" :type="showPw ? 'text' : 'password'" placeholder="Password" autocomplete="current-password" @keydown.enter="signInEmail" />
-            <button class="pw-toggle" @click="showPw = !showPw" type="button" tabindex="-1">{{ showPw ? '🙈' : '👁️' }}</button>
-          </div>
-          <button class="auth-btn-gold" @click="signInEmail" :disabled="busy || !email || !password">
-            <span v-if="busy && !googleBusy" class="auth-spinner gold-spin"></span>
-            {{ (busy && !googleBusy) ? 'Signing in…' : 'Sign In' }}
-          </button>
-          <button class="forgot-link" @click="authMode = 'reset'" type="button">Forgot password?</button>
-        </div>
-
-        <div v-if="errorMsg" class="auth-msg auth-error">{{ errorMsg }}</div>
+        <p class="auth-footnote">Google handles your account securely.<br>No password needed.</p>
       </div>
     </div>
 
@@ -106,48 +74,24 @@ const environmentStore = useEnvironmentStore()
 const healthStore = useHealthStore()
 const settingsStore = useSettingsStore()
 
-const authMode = ref<'signin' | 'reset'>('signin')
-const email = ref('')
-const password = ref('')
-const showPw = ref(false)
 const busy = ref(false)
-const googleBusy = ref(false)
 const errorMsg = ref('')
-const successMsg = ref('')
-
-function parseError(e: any): string {
-  const c = e?.code || ''
-  if (c === 'auth/user-not-found' || c === 'auth/wrong-password' || c === 'auth/invalid-credential') return 'Incorrect email or password.'
-  if (c === 'auth/invalid-email') return 'Please enter a valid email address.'
-  if (c === 'auth/too-many-requests') return 'Too many attempts. Please wait and try again.'
-  if (c === 'auth/popup-closed-by-user') return ''
-  if (c === 'auth/network-request-failed') return 'Network error. Check your connection.'
-  return e?.message || 'Something went wrong. Please try again.'
-}
 
 async function signInGoogle() {
-  busy.value = true; googleBusy.value = true; errorMsg.value = ''
-  try { await authStore.signInWithGoogle() }
-  catch (e: any) { errorMsg.value = parseError(e) }
-  finally { busy.value = false; googleBusy.value = false }
-}
-
-async function signInEmail() {
-  if (!email.value || !password.value) return
-  busy.value = true; errorMsg.value = ''
-  try { await authStore.signInWithEmail(email.value, password.value) }
-  catch (e: any) { errorMsg.value = parseError(e) }
-  finally { busy.value = false }
-}
-
-async function sendReset() {
-  if (!email.value) return
-  busy.value = true; errorMsg.value = ''; successMsg.value = ''
+  busy.value = true
+  errorMsg.value = ''
   try {
-    await authStore.resetPassword(email.value)
-    successMsg.value = '✅ Reset link sent! Check your inbox.'
-  } catch (e: any) { errorMsg.value = parseError(e) }
-  finally { busy.value = false }
+    await authStore.signInWithGoogle()
+  } catch (e: any) {
+    const c = e?.code || ''
+    if (c !== 'auth/popup-closed-by-user' && c !== 'auth/cancelled-popup-request') {
+      errorMsg.value = c === 'auth/network-request-failed'
+        ? 'Network error. Check your connection.'
+        : 'Sign-in failed. Please try again.'
+    }
+  } finally {
+    busy.value = false
+  }
 }
 
 function initStores(uid: string | null) {
@@ -190,65 +134,62 @@ onMounted(() => {
   #app-root { max-width: 420px; }
 }
 
-/* ── Loading ── */
+/* Loading */
 .auth-loading { flex: 1; display: flex; align-items: center; justify-content: center; }
 .auth-loading-icon {
-  font-size: 52px;
+  font-size: 56px;
   animation: pulse-gem 1.6s ease-in-out infinite;
-  filter: drop-shadow(0 0 20px rgba(66,133,244,0.5));
+  filter: drop-shadow(0 0 24px rgba(66,133,244,0.5));
 }
 @keyframes pulse-gem {
-  0%, 100% { opacity: 1; transform: scale(1); filter: drop-shadow(0 0 20px rgba(66,133,244,0.4)); }
-  50% { opacity: 0.7; transform: scale(0.86); filter: drop-shadow(0 0 8px rgba(124,58,237,0.3)); }
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.65; transform: scale(0.84); }
 }
 
-/* ── Login screen ── */
+/* Screen */
 .login-screen {
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
-  background: radial-gradient(ellipse 120% 80% at 50% 0%, rgba(66,133,244,0.12) 0%, transparent 60%),
-              radial-gradient(ellipse 80% 60% at 80% 100%, rgba(124,58,237,0.10) 0%, transparent 60%);
+  padding: 28px 20px;
+  background:
+    radial-gradient(ellipse 130% 70% at 50% -10%, rgba(66,133,244,0.14) 0%, transparent 60%),
+    radial-gradient(ellipse 70% 50% at 90% 110%, rgba(124,58,237,0.10) 0%, transparent 55%);
 }
 
+/* Card */
 .login-card {
   width: 100%;
-  background: rgba(13,17,30,0.95);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 26px;
+  background: rgba(13,17,30,0.97);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 28px;
   overflow: hidden;
-  box-shadow: 0 20px 80px rgba(0,0,0,0.6), 0 0 0 1px rgba(66,133,244,0.15);
-  padding: 0 22px 28px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.65), 0 0 0 1px rgba(66,133,244,0.12);
+  padding: 0 26px 32px;
+  text-align: center;
 }
 
-/* Gemini gradient bar */
+/* Gemini gradient stripe */
 .gem-bar {
   height: 4px;
-  background: linear-gradient(90deg,
-    #4285F4 0%,
-    #7C3AED 30%,
-    #06B6D4 60%,
-    #00C896 80%,
-    #F5A623 100%
-  );
-  margin: 0 -22px 28px;
+  margin: 0 -26px 32px;
+  background: linear-gradient(90deg, #4285F4 0%, #7C3AED 28%, #06B6D4 56%, #00C896 78%, #F5A623 100%);
 }
 
-/* Logo area */
-.login-logo-area { text-align: center; margin-bottom: 24px; }
+/* Logo */
+.login-logo-area { margin-bottom: 20px; }
 .login-icon {
-  font-size: 52px;
+  font-size: 56px;
   display: block;
-  margin-bottom: 12px;
-  filter: drop-shadow(0 0 18px rgba(66,133,244,0.45)) drop-shadow(0 0 6px rgba(124,58,237,0.3));
+  margin-bottom: 14px;
+  filter: drop-shadow(0 0 20px rgba(66,133,244,0.5)) drop-shadow(0 0 8px rgba(124,58,237,0.3));
 }
 .login-title {
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 800;
-  letter-spacing: -0.5px;
-  background: linear-gradient(135deg, #fff 0%, #a8d4ff 50%, #c4b5fd 100%);
+  letter-spacing: -0.6px;
+  background: linear-gradient(135deg, #ffffff 0%, #a8d4ff 55%, #c4b5fd 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -256,13 +197,20 @@ onMounted(() => {
 .login-subtitle {
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 1.2px;
+  letter-spacing: 1.3px;
   text-transform: uppercase;
-  margin-top: 4px;
+  margin-top: 5px;
   background: linear-gradient(90deg, #F5A623, #00C896);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+.login-desc {
+  font-size: 13px;
+  color: rgba(255,255,255,0.38);
+  line-height: 1.55;
+  margin: 0 0 24px;
 }
 
 /* Google button */
@@ -271,124 +219,55 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  padding: 13px 18px;
+  gap: 11px;
+  padding: 15px 20px;
   background: #fff;
-  color: #1f1f1f;
+  color: #1a1a1a;
   border: none;
-  border-radius: 14px;
-  font-size: 14px;
-  font-weight: 600;
+  border-radius: 16px;
+  font-size: 15px;
+  font-weight: 700;
   cursor: pointer;
-  transition: all .18s;
+  transition: all .2s;
   font-family: inherit;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+  letter-spacing: -0.1px;
 }
-.google-btn:hover { background: #f0f4ff; box-shadow: 0 4px 20px rgba(66,133,244,0.25); }
-.google-btn:active { transform: scale(0.97); }
-.google-btn:disabled { opacity: 0.55; cursor: not-allowed; }
-
-/* Divider */
-.auth-divider { display: flex; align-items: center; gap: 10px; margin: 16px 0; }
-.auth-divider::before, .auth-divider::after { content: ''; flex: 1; height: 1px; background: rgba(255,255,255,0.08); }
-.auth-divider span { font-size: 11px; color: rgba(255,255,255,0.3); font-weight: 600; white-space: nowrap; }
-
-/* Email form */
-.email-form { display: flex; flex-direction: column; gap: 10px; }
-
-.auth-input {
-  width: 100%;
-  padding: 13px 14px;
-  background: rgba(255,255,255,0.05);
-  border: 1.5px solid rgba(255,255,255,0.1);
-  border-radius: 13px;
-  color: #fff;
-  font-size: 14px;
-  font-family: inherit;
-  outline: none;
-  box-sizing: border-box;
-  transition: border-color .18s, background .18s;
+.google-btn:hover {
+  background: #f2f6ff;
+  box-shadow: 0 6px 28px rgba(66,133,244,0.3);
+  transform: translateY(-1px);
 }
-.auth-input:focus {
-  border-color: #4285F4;
-  background: rgba(66,133,244,0.06);
-}
-.auth-input::placeholder { color: rgba(255,255,255,0.28); }
+.google-btn:active { transform: scale(0.97) translateY(0); }
+.google-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-.password-wrap { position: relative; }
-.password-wrap .auth-input { padding-right: 46px; }
-.pw-toggle {
-  position: absolute; right: 13px; top: 50%; transform: translateY(-50%);
-  background: none; border: none; cursor: pointer; font-size: 15px; padding: 4px; line-height: 1;
-}
-
-/* Gold sign-in button */
-.auth-btn-gold {
-  width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 14px;
-  background: linear-gradient(135deg, #F5A623 0%, #E8960A 100%);
-  color: #000;
-  border: none;
-  border-radius: 14px;
-  font-size: 14px;
-  font-weight: 800;
-  cursor: pointer;
-  transition: all .18s;
-  font-family: inherit;
-  box-shadow: 0 4px 20px rgba(245,166,35,0.35);
-  letter-spacing: 0.2px;
-}
-.auth-btn-gold:hover { box-shadow: 0 6px 28px rgba(245,166,35,0.5); transform: translateY(-1px); }
-.auth-btn-gold:active { transform: scale(0.97) translateY(0); }
-.auth-btn-gold:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
-
-.auth-spinner {
-  width: 15px; height: 15px;
+.google-spinner {
+  width: 18px; height: 18px;
+  border: 2.5px solid rgba(30,30,30,0.15);
+  border-top-color: #4285F4;
   border-radius: 50%;
-  animation: spin 0.7s linear infinite;
+  animation: spin .7s linear infinite;
   flex-shrink: 0;
 }
-.gold-spin { border: 2px solid rgba(0,0,0,0.15); border-top-color: #000; }
-.dark-spin { border: 2px solid rgba(30,30,30,0.2); border-top-color: #333; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.forgot-link {
-  background: none; border: none; cursor: pointer;
-  font-size: 12px; font-weight: 600; font-family: inherit;
-  color: rgba(255,255,255,0.35);
-  text-align: center; padding: 4px;
-  transition: color .15s;
-}
-.forgot-link:hover { color: #4285F4; }
-
-/* Reset password view */
-.reset-back {
-  display: flex; align-items: center; gap: 6px;
-  background: none; border: none; cursor: pointer; font-family: inherit;
-  color: rgba(255,255,255,0.4); font-size: 13px; font-weight: 600;
-  padding: 0; margin-bottom: 24px;
-  transition: color .15s;
-}
-.reset-back:hover { color: #4285F4; }
-.reset-icon { font-size: 42px; text-align: center; display: block; margin-bottom: 10px; }
-.reset-title { font-size: 20px; font-weight: 800; color: #fff; text-align: center; margin-bottom: 6px; }
-.reset-desc { font-size: 13px; color: rgba(255,255,255,0.45); line-height: 1.55; text-align: center; margin-bottom: 20px; }
-
-/* Messages */
-.auth-msg {
-  margin-top: 12px;
+.auth-error {
+  margin-top: 14px;
   padding: 11px 14px;
+  background: rgba(255,64,96,0.1);
+  border: 1px solid rgba(255,64,96,0.2);
   border-radius: 12px;
   font-size: 13px;
   font-weight: 600;
-  line-height: 1.4;
+  color: #FF6B6B;
 }
-.auth-error { background: rgba(255,64,96,0.12); color: #FF6B6B; border: 1px solid rgba(255,64,96,0.2); }
-.auth-success { background: rgba(0,200,150,0.12); color: #00C896; border: 1px solid rgba(0,200,150,0.2); }
+
+.auth-footnote {
+  font-size: 11px;
+  color: rgba(255,255,255,0.22);
+  margin: 18px 0 0;
+  line-height: 1.6;
+}
 
 /* Page transitions */
 .page-enter-active { transition: opacity 0.18s ease, transform 0.2s ease; }
