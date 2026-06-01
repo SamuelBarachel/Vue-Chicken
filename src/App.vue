@@ -120,16 +120,15 @@ function signIn() {
   overflow: hidden;
   background: var(--bg);
   width: 100%;
-  max-width: 430px;
-  margin: 0 auto;
   position: relative;
 }
-@media (min-width: 480px) {
-  #app-root { box-shadow: 0 0 80px rgba(0,0,0,0.8), 0 0 0 1px var(--border); }
-  body { background: #060912; }
-}
-@media (min-width: 768px) {
-  #app-root { max-width: 430px; }
+@media (min-width: 520px) {
+  #app-root {
+    max-width: 460px;
+    margin: 0 auto;
+    box-shadow: 0 0 80px rgba(0,0,0,0.8), 0 0 0 1px var(--border);
+  }
+  body { background: #050810; }
 }
 
 /* Loading */
@@ -158,7 +157,7 @@ function signIn() {
 /* Login screen */
 .login-screen {
   flex: 1; display: flex; align-items: center; justify-content: center;
-  padding: 28px 20px;
+  padding: calc(28px + var(--safe-top)) 20px calc(28px + var(--safe-bottom));
   background: linear-gradient(160deg, #162040 0%, var(--bg) 65%);
 }
 

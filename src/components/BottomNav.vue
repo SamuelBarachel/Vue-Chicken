@@ -52,16 +52,17 @@ function isActive(item: typeof navItems[0]) {
 <style scoped>
 .bottom-nav {
   display: flex;
-  align-items: center;
-  height: var(--nav-h);
-  background: rgba(26,14,8,0.96);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border-top: 1px solid rgba(255,255,255,0.07);
-  padding: 8px 4px max(20px,var(--safe-bottom));
+  align-items: flex-start;
+  height: calc(var(--nav-h) + var(--safe-bottom));
+  background: rgba(11,15,24,0.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(255,255,255,0.08);
+  padding: 10px 4px var(--safe-bottom);
   flex-shrink: 0;
   position: relative;
   z-index: 40;
+  touch-action: manipulation;
 }
 
 .nav-item {
@@ -69,14 +70,18 @@ function isActive(item: typeof navItems[0]) {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 3px;
   text-decoration: none;
   color: var(--text3);
-  padding: 6px 4px;
+  padding: 6px 4px 0;
   transition: all 0.18s;
   -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
   position: relative;
+  min-height: 44px;
 }
 
 .nav-item.active { color: var(--amber2); }
