@@ -235,6 +235,8 @@ import { useWeightStore } from '@/stores/weights'
 import { useEnvironmentStore } from '@/stores/environment'
 import { useSettingsStore } from '@/stores/settings'
 import { useFeedStockStore } from '@/stores/feedStock'
+import { useActivityLogStore } from '@/stores/activityLog'
+import { useAuthStore } from '@/stores/auth'
 import { formatCurrency, today, nowTime, weeksOld } from '@/utils/formatters'
 
 const router = useRouter()
@@ -246,6 +248,8 @@ const eggStore = useEggStore()
 const weightStore = useWeightStore()
 const environmentStore = useEnvironmentStore()
 const feedStockStore = useFeedStockStore()
+const activityLogStore = useActivityLogStore()
+const authStore = useAuthStore()
 const { settings } = useSettingsStore()
 const sym = computed(() => settings.currencySymbol)
 
@@ -283,20 +287,29 @@ const mortForm = ref({ count:1, date:today(), cause:'unknown' as any, notes:'' }
 const envForm = ref({ date:today(), time:nowTime(), temperature:0, humidity:0, ammonia:0, lightHours:0, ventilation:'good' as any })
 const revForm = ref({ type:'eggs' as any, quantity:0, unitPrice:0, date:today(), notes:'' })
 
+function logActivity(category: Parameters<typeof activityLogStore.log>[0], description: string) {
+  const u = authStore.user
+  if (!u) return
+  activityLogStore.log(category, description, u, { batchId: selectedBatchId.value, batchName: selectedBatch.value?.name })
+}
+
 function saveExpense() {
   if (!expForm.value.amount || !expForm.value.description) return
   expenseStore.add({ batchId:selectedBatchId.value, ...expForm.value })
+  logActivity('expense', `💸 ${expForm.value.description} — ${formatCurrency(expForm.value.amount, sym.value)} [${expForm.value.category}]`)
   expForm.value = { category:'feed', amount:0, date:today(), description:'' }; flash()
 }
 function saveEggs() {
   const total = eggForm.value.gradeA+eggForm.value.gradeB+eggForm.value.broken
   if (!total) return
   eggStore.add({ batchId:selectedBatchId.value, ...eggForm.value, totalEggs:total, notes:'' })
+  logActivity('eggs', `🥚 Collected ${total} eggs (A:${eggForm.value.gradeA} B:${eggForm.value.gradeB} ✕:${eggForm.value.broken})`)
   eggForm.value = { date:today(), gradeA:0, gradeB:0, broken:0 }; flash()
 }
 function saveWeight() {
   if (!wtForm.value.averageWeight) return
   weightStore.add({ batchId:selectedBatchId.value, ...wtForm.value, notes:'' })
+  logActivity('weight', `⚖️ Weight sample: ${wtForm.value.averageWeight}${settings.weightUnit} avg (n=${wtForm.value.sampleSize})`)
   wtForm.value = { date:today(), sampleSize:20, averageWeight:0, minWeight:0, maxWeight:0 }; flash()
 }
 function saveMortality() {
@@ -304,16 +317,19 @@ function saveMortality() {
   mortalityStore.add({ batchId:selectedBatchId.value, ...mortForm.value })
   const b = selectedBatch.value
   if (b) batchStore.update(selectedBatchId.value, { currentCount:Math.max(0,b.currentCount-mortForm.value.count) })
+  logActivity('mortality', `💀 ${mortForm.value.count} bird${mortForm.value.count > 1 ? 's' : ''} lost — cause: ${mortForm.value.cause}`)
   mortForm.value = { count:1, date:today(), cause:'unknown', notes:'' }; flash()
 }
 function saveEnv() {
   if (!envForm.value.temperature) return
   environmentStore.add({ batchId:selectedBatchId.value, ...envForm.value, notes:'' })
+  logActivity('env', `🌡️ Temp ${envForm.value.temperature}°${settings.temperatureUnit}, humidity ${envForm.value.humidity}%, ventilation: ${envForm.value.ventilation}`)
   envForm.value = { date:today(), time:nowTime(), temperature:0, humidity:0, ammonia:0, lightHours:0, ventilation:'good' }; flash()
 }
 function saveRevenue() {
   if (!revForm.value.quantity || !revForm.value.unitPrice) return
   revenueStore.add({ batchId:selectedBatchId.value, ...revForm.value, amount:revForm.value.quantity*revForm.value.unitPrice })
+  logActivity('revenue', `💵 Sale: ${revForm.value.quantity} × ${formatCurrency(revForm.value.unitPrice, sym.value)} = ${formatCurrency(revForm.value.quantity * revForm.value.unitPrice, sym.value)} [${revForm.value.type}]`)
   revForm.value = { type:'eggs', quantity:0, unitPrice:0, date:today(), notes:'' }; flash()
 }
 
@@ -337,6 +353,8 @@ function saveFeed() {
     durationDays: f.durationDays,
     feedType: f.feedType || undefined,
   })
+  const rateStr = feedRateInfo.value ? ` @ ${feedRateInfo.value.actualG}g/bird/day` : ''
+  logActivity('feed', `🌾 ${f.quantityKg}kg feed stocked${f.feedType ? ` (${f.feedType})` : ''}, lasts ${f.durationDays} days${rateStr}`)
   feedForm.value = { date: today(), quantityKg: 0, durationDays: 7, feedType: '' }
   flash()
 }

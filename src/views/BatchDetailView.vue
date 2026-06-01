@@ -343,6 +343,70 @@
       </div>
     </div>
 
+    <!-- ───── FEED ───── -->
+    <div v-if="activeTab === 'feed'" class="section mt-2">
+      <div class="tab-action-row mb-3">
+        <div v-if="latestFeed">
+          <div class="text-sm font-bold">Last Restocked</div>
+          <div class="stat-value-sm text-amber">{{ formatDate(latestFeed.date) }}</div>
+        </div>
+        <div v-else class="text-sm text-muted">No feed logged yet</div>
+        <button class="btn btn-primary btn-sm" @click="$router.push('/log')">🌾 Log Feed</button>
+      </div>
+
+      <!-- Summary card -->
+      <div v-if="latestFeed" class="feed-summary mb-3"
+        :class="feedRateStatus === 'ok' ? 'fsc-ok' : feedRateStatus === 'under' ? 'fsc-under' : 'fsc-over'">
+        <div class="fsc-row">
+          <div class="fsc-item">
+            <div class="fsc-val">{{ latestFeed.quantityKg }}kg</div>
+            <div class="fsc-lbl">Stocked</div>
+          </div>
+          <div class="fsc-div"></div>
+          <div class="fsc-item">
+            <div class="fsc-val"
+              :class="feedRateStatus === 'ok' ? 'text-green' : feedRateStatus === 'under' ? 'text-red' : 'text-amber'">
+              {{ currentFeedRate }}g
+            </div>
+            <div class="fsc-lbl">g/bird/day</div>
+          </div>
+          <div class="fsc-div"></div>
+          <div class="fsc-item">
+            <div class="fsc-val" :class="feedDaysRemaining <= 1 ? 'text-red' : feedDaysRemaining <= 3 ? 'text-amber' : 'text-green'">
+              {{ feedDaysRemaining }}d
+            </div>
+            <div class="fsc-lbl">Remaining</div>
+          </div>
+        </div>
+        <div class="fsc-status">
+          {{ feedRateStatus === 'ok' ? '✅ Feed rate is good' : feedRateStatus === 'under' ? '⬇️ Possible underfeeding' : '⬆️ Possible overfeeding' }}
+          · Rec: {{ FEED_REC[batch.mode] || 110 }}g/bird/day
+        </div>
+      </div>
+
+      <!-- History list -->
+      <div class="card" style="padding:4px 14px">
+        <div v-for="rec in batchFeedRecords" :key="rec.id" class="list-item">
+          <div class="icon-circle" style="background:rgba(245,166,35,0.15);font-size:17px">🌾</div>
+          <div class="flex-1">
+            <div class="flex-between">
+              <div class="text-sm font-bold">{{ rec.quantityKg }}kg{{ rec.feedType ? ' · ' + rec.feedType : '' }}</div>
+              <div class="text-xs text-dim">{{ formatDate(rec.date) }}</div>
+            </div>
+            <div class="flex gap-2 mt-1" style="align-items:center">
+              <span class="text-xs text-muted">{{ rec.durationDays }}d planned</span>
+              <span class="feed-rate-badge" :class="feedRateBadgeClass(rec)">{{ getFeedRate(rec) }}g/b/d</span>
+            </div>
+          </div>
+          <button @click.stop="feedStockStore.remove(rec.id)" class="del-btn" style="margin-left:8px">✕</button>
+        </div>
+        <div v-if="!batchFeedRecords.length" class="empty-state" style="padding:28px 0">
+          <div class="empty-icon" style="font-size:36px">🌾</div>
+          <div class="empty-desc">No feed logged — tap "Log Feed" to start</div>
+        </div>
+      </div>
+    </div>
+
     <!-- ===== MODALS ===== -->
     <ModalSheet v-model="showExpenseModal" title="Add Expense">
       <div class="form-group"><label class="form-label">Category</label>
@@ -475,6 +539,9 @@ import { useEggStore } from '@/stores/eggs'
 import { useWeightStore } from '@/stores/weights'
 import { useEnvironmentStore } from '@/stores/environment'
 import { useSettingsStore } from '@/stores/settings'
+import { useFeedStockStore } from '@/stores/feedStock'
+import { useActivityLogStore } from '@/stores/activityLog'
+import { useAuthStore } from '@/stores/auth'
 import { formatCurrency, formatDate, weeksOld, today, nowTime, pctNum } from '@/utils/formatters'
 
 const route = useRoute()
@@ -486,6 +553,9 @@ const mortalityStore = useMortalityStore()
 const eggStore = useEggStore()
 const weightStore = useWeightStore()
 const environmentStore = useEnvironmentStore()
+const feedStockStore = useFeedStockStore()
+const activityLogStore = useActivityLogStore()
+const authStore = useAuthStore()
 const { settings } = useSettingsStore()
 const sym = computed(() => settings.currencySymbol)
 
@@ -497,6 +567,7 @@ const tabs = computed(() => [
   { id: 'expenses', label: '💸 Costs' },
   { id: 'revenue', label: '💵 Sales' },
   { id: 'production', label: batch.value?.mode === 'egg' ? '🥚 Eggs' : '⚖️ Weights' },
+  { id: 'feed', label: '🌾 Feed' },
   { id: 'health', label: '💀 Loss' },
   { id: 'env', label: '🌡️ Env' },
 ])
@@ -509,6 +580,44 @@ const batchEggs = computed(() => eggStore.collections.filter(c => c.batchId === 
 const batchWeights = computed(() => weightStore.records.filter(r => r.batchId === id.value).sort((a,b) => b.date.localeCompare(a.date)))
 const batchEnvLogs = computed(() => environmentStore.logs.filter(l => l.batchId === id.value).sort((a,b) => (b.date+b.time).localeCompare(a.date+a.time)))
 const latestEnv = computed(() => batchEnvLogs.value[0] || null)
+const batchFeedRecords = computed(() => feedStockStore.records.filter(r => r.batchId === id.value).sort((a,b) => b.date.localeCompare(a.date)))
+const latestFeed = computed(() => batchFeedRecords.value[0] || null)
+const FEED_REC: Record<string, number> = { egg: 120, meat: 100 }
+const currentFeedRate = computed(() => {
+  if (!latestFeed.value || !batch.value?.currentCount) return 0
+  return Math.round((latestFeed.value.quantityKg * 1000) / latestFeed.value.durationDays / batch.value.currentCount)
+})
+const feedRateStatus = computed(() => {
+  if (!latestFeed.value) return 'none'
+  const rec = FEED_REC[batch.value?.mode || 'egg']
+  const ratio = currentFeedRate.value / rec
+  if (ratio < 0.80) return 'under'
+  if (ratio > 1.25) return 'over'
+  return 'ok'
+})
+const feedDaysRemaining = computed(() => {
+  if (!latestFeed.value) return 0
+  const feedDate = new Date(latestFeed.value.date)
+  const daysSince = Math.floor((Date.now() - feedDate.getTime()) / 86400000)
+  return Math.max(0, latestFeed.value.durationDays - daysSince)
+})
+function getFeedRate(rec: { quantityKg: number; durationDays: number }) {
+  if (!batch.value?.currentCount) return 0
+  return Math.round((rec.quantityKg * 1000) / rec.durationDays / batch.value.currentCount)
+}
+function feedRateBadgeClass(rec: { quantityKg: number; durationDays: number }) {
+  const recommended = FEED_REC[batch.value?.mode || 'egg']
+  const ratio = getFeedRate(rec) / recommended
+  if (ratio < 0.80) return 'rate-under'
+  if (ratio > 1.25) return 'rate-over'
+  return 'rate-ok'
+}
+
+function logActivity(category: Parameters<typeof activityLogStore.log>[0], description: string) {
+  const u = authStore.user
+  if (!u) return
+  activityLogStore.log(category, description, u, { batchId: id.value, batchName: batch.value?.name })
+}
 
 const totalExp = computed(() => batchExpenses.value.reduce((s,e) => s+e.amount, 0))
 const totalRev = computed(() => batchRevenues.value.reduce((s,r) => s+r.amount, 0))
@@ -586,12 +695,14 @@ const envForm = ref({ date:today(), time:nowTime(), temperature:0, humidity:0, a
 function saveExpense() {
   if (!expForm.value.amount || !expForm.value.description) return
   expenseStore.add({ batchId:id.value, ...expForm.value })
+  logActivity('expense', `💸 ${expForm.value.description} — ${formatCurrency(expForm.value.amount, sym.value)} [${expForm.value.category}]`)
   expForm.value = { category:'feed', amount:0, date:today(), description:'' }
   showExpenseModal.value = false
 }
 function saveRevenue() {
   if (!revForm.value.quantity || !revForm.value.unitPrice) return
   revenueStore.add({ batchId:id.value, ...revForm.value, amount:revForm.value.quantity*revForm.value.unitPrice })
+  logActivity('revenue', `💵 Sale: ${revForm.value.quantity} × ${formatCurrency(revForm.value.unitPrice, sym.value)} = ${formatCurrency(revForm.value.quantity*revForm.value.unitPrice, sym.value)} [${revForm.value.type}]`)
   revForm.value = { type:'eggs', quantity:0, unitPrice:0, date:today(), notes:'' }
   showRevenueModal.value = false
 }
@@ -599,12 +710,14 @@ function saveEggs() {
   const total = eggForm.value.gradeA+eggForm.value.gradeB+eggForm.value.broken
   if (!total) return
   eggStore.add({ batchId:id.value, ...eggForm.value, totalEggs:total })
+  logActivity('eggs', `🥚 Collected ${total} eggs (A:${eggForm.value.gradeA} B:${eggForm.value.gradeB} ✕:${eggForm.value.broken})`)
   eggForm.value = { date:today(), gradeA:0, gradeB:0, broken:0, notes:'' }
   showEggModal.value = false
 }
 function saveWeight() {
   if (!wtForm.value.averageWeight) return
   weightStore.add({ batchId:id.value, ...wtForm.value })
+  logActivity('weight', `⚖️ Weight sample: ${wtForm.value.averageWeight}${settings.weightUnit} avg (n=${wtForm.value.sampleSize})`)
   wtForm.value = { date:today(), sampleSize:20, averageWeight:0, minWeight:0, maxWeight:0, notes:'' }
   showWeightModal.value = false
 }
@@ -613,12 +726,14 @@ function saveMortality() {
   mortalityStore.add({ batchId:id.value, ...mortForm.value })
   const b = batch.value
   if (b) batchStore.update(id.value, { currentCount:Math.max(0,b.currentCount-mortForm.value.count) })
+  logActivity('mortality', `💀 ${mortForm.value.count} bird${mortForm.value.count > 1 ? 's' : ''} lost — cause: ${mortForm.value.cause}`)
   mortForm.value = { count:1, date:today(), cause:'unknown', notes:'' }
   showMortalityModal.value = false
 }
 function saveEnv() {
   if (!envForm.value.temperature) return
   environmentStore.add({ batchId:id.value, ...envForm.value, notes:'' })
+  logActivity('env', `🌡️ Temp ${envForm.value.temperature}°${settings.temperatureUnit}, humidity ${envForm.value.humidity}%, ventilation: ${envForm.value.ventilation}`)
   envForm.value = { date:today(), time:nowTime(), temperature:0, humidity:0, ammonia:0, lightHours:0, ventilation:'good' }
   showEnvModal.value = false
 }
@@ -646,6 +761,22 @@ function saveEnv() {
 .bkpi-val { font-size:15px;font-weight:800;letter-spacing:-0.3px; }
 .bkpi-lbl { font-size:9px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-top:3px; }
 .bkpi-div { width:1px;height:28px;background:rgba(255,255,255,0.07); }
+
+/* Feed tab */
+.feed-summary { border-radius:16px;padding:0;overflow:hidden;border:1px solid var(--border2); }
+.fsc-ok { border-color:rgba(0,200,150,.25);background:rgba(0,200,150,.06); }
+.fsc-under { border-color:rgba(255,64,96,.25);background:rgba(255,64,96,.06); }
+.fsc-over { border-color:rgba(255,165,0,.25);background:rgba(255,165,0,.06); }
+.fsc-row { display:flex;align-items:center;padding:14px 16px; }
+.fsc-item { flex:1;text-align:center; }
+.fsc-val { font-size:20px;font-weight:900;letter-spacing:-.5px; }
+.fsc-lbl { font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-top:2px; }
+.fsc-div { width:1px;height:32px;background:var(--border); }
+.fsc-status { font-size:12px;font-weight:700;padding:8px 16px;border-top:1px solid var(--border);color:var(--text2); }
+.feed-rate-badge { font-size:10px;font-weight:800;padding:2px 8px;border-radius:6px; }
+.rate-ok { background:rgba(0,200,150,.15);color:var(--green2); }
+.rate-under { background:rgba(255,64,96,.15);color:var(--red2); }
+.rate-over { background:rgba(255,165,0,.15);color:#ff9800; }
 
 /* Detail tabs */
 .detail-tab {

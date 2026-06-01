@@ -103,6 +103,22 @@ export interface FeedStock {
   notes?: string
 }
 
+export type ActivityCategory = 'eggs' | 'expense' | 'feed' | 'revenue' | 'mortality' | 'health' | 'weight' | 'env' | 'batch'
+
+export interface ActivityEntry {
+  id: string
+  category: ActivityCategory
+  batchId?: string
+  batchName?: string
+  description: string
+  timestamp: number
+  date: string
+  userId: string
+  userName: string
+  userEmail: string
+  userPhoto?: string
+}
+
 export interface AppSettings {
   currency: string
   currencySymbol: string

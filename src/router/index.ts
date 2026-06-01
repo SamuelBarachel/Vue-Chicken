@@ -12,6 +12,7 @@ const router = createRouter({
     { path: '/log', name: 'log', component: () => import('../views/LogEntryView.vue') },
     { path: '/reports', name: 'reports', component: () => import('../views/ReportsView.vue') },
     { path: '/settings', name: 'settings', component: () => import('../views/SettingsView.vue') },
+    { path: '/activity', name: 'activity', component: () => import('../views/ActivityLogView.vue') },
   ],
   scrollBehavior() {
     return { top: 0 }
