@@ -9,7 +9,7 @@
     <!-- Login screen -->
     <div v-else-if="!authStore.uid" class="login-screen">
       <div class="login-card">
-        <div class="gem-bar"></div>
+        <div class="login-top-bar"></div>
 
         <div class="login-logo-area">
           <div class="login-icon">🐔</div>
@@ -17,10 +17,10 @@
           <div class="login-subtitle">Poultry farm manager</div>
         </div>
 
-        <p class="login-desc">Sign in to access your farm — or create a new one.</p>
+        <p class="login-desc">Sign in to access your farm records and track performance.</p>
 
         <button class="login-btn" @click="signIn">
-          Log in
+          Log in to your farm
         </button>
 
         <p class="auth-footnote">Your account is handled securely. No password needed.</p>
@@ -120,101 +120,102 @@ function signIn() {
   overflow: hidden;
   background: var(--bg);
   width: 100%;
-  max-width: 480px;
+  max-width: 430px;
   margin: 0 auto;
   position: relative;
 }
 @media (min-width: 480px) {
   #app-root { box-shadow: 0 0 80px rgba(0,0,0,0.8), 0 0 0 1px var(--border); }
-  body { background: #020903; }
+  body { background: #0D0604; }
 }
 @media (min-width: 768px) {
-  #app-root { max-width: 420px; }
+  #app-root { max-width: 430px; }
 }
 
 /* Loading */
 .auth-loading {
   flex: 1; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 16px;
+  background: var(--bg);
 }
 .auth-loading-icon {
   font-size: 56px;
   animation: pulse-gem 1.6s ease-in-out infinite;
-  filter: drop-shadow(0 0 24px rgba(66,133,244,0.5));
 }
 .auth-loading-text {
-  font-size: 13px; font-weight: 600;
-  color: rgba(255,255,255,0.3);
+  font-size: 13px; font-weight: 500;
+  color: var(--text2);
   animation: fade-cycle 0.9s ease-in-out;
 }
 @keyframes pulse-gem {
   0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.65; transform: scale(0.84); }
+  50% { opacity: 0.6; transform: scale(0.88); }
 }
 @keyframes fade-cycle {
   0% { opacity: 0; } 20% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0.6; }
 }
 
-/* Screen */
+/* Login screen */
 .login-screen {
   flex: 1; display: flex; align-items: center; justify-content: center;
   padding: 28px 20px;
   background:
-    radial-gradient(ellipse 130% 70% at 50% -10%, rgba(34,197,94,0.14) 0%, transparent 60%),
-    radial-gradient(ellipse 70% 50% at 90% 110%, rgba(249,115,22,0.10) 0%, transparent 55%);
+    linear-gradient(160deg, #3D2014 0%, var(--bg) 60%);
 }
 
 /* Card */
 .login-card {
   width: 100%;
-  background: rgba(9,20,10,0.97);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 28px;
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 24px;
   overflow: hidden;
-  box-shadow: 0 24px 80px rgba(0,0,0,0.65), 0 0 0 1px rgba(34,197,94,0.12);
+  box-shadow: 0 24px 80px rgba(0,0,0,0.5);
   padding: 0 26px 32px;
   text-align: center;
 }
 
-/* Golf stripe */
-.gem-bar {
+/* Top stripe — terra gradient */
+.login-top-bar {
   height: 4px; margin: 0 -26px 32px;
-  background: linear-gradient(90deg, #15803D 0%, #22C55E 30%, #86EFAC 55%, #FB923C 78%, #F97316 100%);
+  background: linear-gradient(90deg, #8B3A1A 0%, #C4622D 40%, #E8845A 70%, #D4A427 100%);
 }
 
 /* Logo */
 .login-logo-area { margin-bottom: 20px; }
 .login-icon {
-  font-size: 56px; display: block; margin-bottom: 14px;
-  filter: drop-shadow(0 0 20px rgba(34,197,94,0.5)) drop-shadow(0 0 8px rgba(249,115,22,0.3));
+  font-size: 60px; display: block; margin-bottom: 14px;
+  filter: drop-shadow(0 0 24px rgba(196,98,45,0.45));
 }
 .login-title {
-  font-size: 26px; font-weight: 800; letter-spacing: -0.6px;
-  background: linear-gradient(135deg, #ffffff 0%, #bbf7d0 55%, #fde68a 100%);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 28px; font-weight: 900; letter-spacing: -0.4px;
+  color: var(--text);
 }
 .login-subtitle {
-  font-size: 11px; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; margin-top: 5px;
-  background: linear-gradient(90deg, #22C55E, #F97316);
-  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  font-size: 11px; font-weight: 600; letter-spacing: 1.4px; text-transform: uppercase; margin-top: 5px;
+  color: var(--amber2);
 }
 
-.login-desc { font-size: 13px; color: rgba(255,255,255,0.38); line-height: 1.55; margin: 0 0 20px; }
+.login-desc {
+  font-size: 13px; color: var(--text2); line-height: 1.55; margin: 0 0 22px;
+}
 
 /* Login button */
 .login-btn {
-  width: 100%; display: flex; align-items: center; justify-content: center; gap: 11px;
+  width: 100%; display: flex; align-items: center; justify-content: center;
   padding: 15px 20px;
-  background: linear-gradient(135deg, #22C55E 0%, #F97316 100%);
+  background: var(--amber);
   color: #fff;
-  border: none; border-radius: 16px; font-size: 15px; font-weight: 700;
-  cursor: pointer; transition: all .2s; font-family: inherit;
-  box-shadow: 0 4px 20px rgba(34,197,94,0.3); letter-spacing: -0.1px;
+  border: none; border-radius: 16px; font-size: 15px; font-weight: 600;
+  cursor: pointer; transition: all .18s;
+  font-family: 'DM Sans', sans-serif;
+  box-shadow: 0 6px 24px var(--amber-glow);
 }
-.login-btn:hover { box-shadow: 0 6px 28px rgba(34,197,94,0.4); transform: translateY(-1px); }
-.login-btn:active { transform: scale(0.97) translateY(0); }
+.login-btn:hover { background: #D46A35; }
+.login-btn:active { transform: scale(0.97); }
 
-.auth-footnote { font-size: 11px; color: rgba(255,255,255,0.22); margin: 16px 0 0; line-height: 1.6; }
+.auth-footnote { font-size: 11px; color: var(--text3); margin: 16px 0 0; line-height: 1.6; }
 
 /* Page transitions */
 .page-enter-active { transition: opacity 0.18s ease, transform 0.2s ease; }

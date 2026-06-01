@@ -778,14 +778,14 @@ function saveEnv() {
 
 /* Banner */
 .batch-banner { border-radius: 20px; overflow: hidden; border: 1px solid var(--border2); position: relative; }
-.banner-egg { background: linear-gradient(145deg, #0E1C10 0%, #12220E 60%, #0A1808 100%); border-color: rgba(234,179,8,0.15); }
-.banner-meat { background: linear-gradient(145deg, #1C0E0E 0%, #220E0E 60%, #180808 100%); border-color: rgba(229,57,53,0.15); }
+.banner-egg  { background: linear-gradient(145deg, #3D2E10 0%, #2A1E0A 60%, #1A1208 100%); border-color: rgba(212,164,39,0.18); }
+.banner-meat { background: linear-gradient(145deg, #3D2014 0%, #2A1810 60%, #1A0E08 100%); border-color: rgba(196,98,45,0.25); }
 .banner-glow { position:absolute;top:-30px;right:-30px;width:140px;height:140px;border-radius:50%;pointer-events:none; }
-.glow-egg { background: radial-gradient(circle, rgba(234,179,8,0.2) 0%, transparent 70%); }
-.glow-meat { background: radial-gradient(circle, rgba(229,57,53,0.2) 0%, transparent 70%); }
+.glow-egg  { background: radial-gradient(circle, rgba(212,164,39,0.18) 0%, transparent 70%); }
+.glow-meat { background: radial-gradient(circle, rgba(196,98,45,0.20) 0%, transparent 70%); }
 .banner-body { display:flex;align-items:flex-start;gap:12px;padding:16px 16px 12px; }
 .banner-icon { font-size:34px;line-height:1;flex-shrink:0; }
-.banner-name { font-size:18px;font-weight:900;letter-spacing:-0.4px; }
+.banner-name { font-family:'Playfair Display',Georgia,serif;font-size:20px;font-weight:900; }
 .banner-breed { font-size:12px;color:var(--text3);margin-top:2px; }
 .banner-badges { display:flex;align-items:center;gap:6px;margin-top:7px; }
 .banner-pnl { font-size:20px;font-weight:900;letter-spacing:-0.5px;flex-shrink:0; }

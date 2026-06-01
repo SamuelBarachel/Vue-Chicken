@@ -9,7 +9,6 @@
     >
       <div class="nav-icon-wrap">
         <div class="nav-icon" v-html="item.icon"></div>
-        <div class="nav-pip" v-if="isActive(item)"></div>
       </div>
       <span class="nav-label">{{ item.label }}</span>
     </RouterLink>
@@ -55,11 +54,11 @@ function isActive(item: typeof navItems[0]) {
   display: flex;
   align-items: center;
   height: var(--nav-h);
-  background: rgba(6, 14, 7, 0.96);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid var(--border);
-  padding-bottom: var(--safe-bottom);
+  background: rgba(26,14,8,0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-top: 1px solid rgba(255,255,255,0.07);
+  padding: 8px 4px max(20px,var(--safe-bottom));
   flex-shrink: 0;
   position: relative;
   z-index: 40;
@@ -71,16 +70,16 @@ function isActive(item: typeof navItems[0]) {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 4px;
+  gap: 3px;
   text-decoration: none;
   color: var(--text3);
-  padding: 8px 4px;
-  transition: color 0.2s;
+  padding: 6px 4px;
+  transition: all 0.18s;
   -webkit-tap-highlight-color: transparent;
   position: relative;
 }
 
-.nav-item.active { color: var(--brand); }
+.nav-item.active { color: var(--amber2); }
 
 .nav-icon-wrap {
   position: relative;
@@ -90,48 +89,39 @@ function isActive(item: typeof navItems[0]) {
 }
 
 .nav-icon {
-  transition: transform 0.25s cubic-bezier(0.34,1.4,0.64,1);
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
   display: flex;
   align-items: center;
 }
 
 .nav-item.active .nav-icon {
-  transform: scale(1.1) translateY(-1px);
+  transform: scale(1.15) translateY(-2px);
 }
 
-/* Special center Log button */
+/* Center Log button */
 .nav-item:nth-child(3) .nav-icon-wrap {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, var(--brand) 0%, var(--amber) 100%);
+  background: var(--amber);
   border-radius: 16px;
   color: #fff;
-  margin-top: -4px;
-  box-shadow: 0 4px 18px rgba(34,197,94,0.35);
-  transition: all 0.25s cubic-bezier(0.34,1.4,0.64,1);
+  margin-top: -6px;
+  box-shadow: 0 4px 20px var(--amber-glow2);
+  transition: all 0.2s cubic-bezier(0.34,1.4,0.64,1);
 }
 .nav-item:nth-child(3) { color: var(--text3); }
 .nav-item:nth-child(3).active .nav-icon { transform: scale(1) translateY(0); }
 .nav-item:nth-child(3):active .nav-icon-wrap { transform: scale(0.92); }
-.nav-item:nth-child(3).active .nav-icon-wrap { box-shadow: 0 6px 24px rgba(34,197,94,0.45); }
-
-.nav-pip {
-  position: absolute;
-  bottom: -6px;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 4px;
-  height: 4px;
-  background: var(--brand);
-  border-radius: 2px;
-  animation: pip-in 0.3s cubic-bezier(0.34,1.4,0.64,1);
-}
-@keyframes pip-in { from { transform: translateX(-50%) scaleX(0); opacity: 0; } }
+.nav-item:nth-child(3).active .nav-icon-wrap { background: #D46A35; }
 
 .nav-label {
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--text2);
+  transition: color 0.18s;
 }
-.nav-item:nth-child(3) .nav-label { color: var(--text3); margin-top: 2px; }
+.nav-item.active .nav-label { color: var(--amber2); }
+.nav-item:nth-child(3) .nav-label { color: var(--text3); }
 </style>

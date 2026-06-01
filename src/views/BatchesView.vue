@@ -175,12 +175,12 @@ function latestWeight(id: string) {
   position: relative;
 }
 .batch-card:active { background: rgba(255,255,255,0.02); }
-.bc-egg:active { border-color: var(--egg); }
-.bc-meat:active { border-color: var(--meat); }
+.bc-egg:active  { border-color: var(--egg); }
+.bc-meat:active { border-color: var(--amber); }
 
-.bc-stripe { height: 2px; width: 100%; }
-.stripe-egg { background: linear-gradient(90deg, var(--egg) 0%, #FCD34D 100%); }
-.stripe-meat { background: linear-gradient(90deg, var(--meat) 0%, #FF6B6B 100%); }
+.bc-stripe { height: 3px; width: 100%; }
+.stripe-egg  { background: linear-gradient(90deg, var(--egg) 0%, var(--egg2) 100%); }
+.stripe-meat { background: linear-gradient(90deg, var(--amber) 0%, var(--amber2) 100%); }
 
 .bc-head {
   display: flex;
@@ -189,7 +189,7 @@ function latestWeight(id: string) {
   padding: 12px 14px 10px;
 }
 .bc-emoji { font-size: 20px; line-height: 1; flex-shrink: 0; }
-.bc-name { font-size: 14px; font-weight: 700; letter-spacing: -0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bc-name { font-family:'Playfair Display',Georgia,serif;font-size:16px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
 .bc-breed { font-size: 11px; color: var(--text3); font-weight: 500; margin-top: 2px; }
 .bc-badges { display: flex; flex-direction: row; gap: 4px; align-items: center; flex-shrink: 0; }
 

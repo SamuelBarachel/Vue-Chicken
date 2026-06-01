@@ -304,8 +304,8 @@ const recentLogs = computed(() => {
 <style scoped>
 .greeting {
   font-size: 12px;
-  font-weight: 600;
-  color: var(--text3);
+  font-weight: 500;
+  color: var(--text2);
   margin-bottom: 2px;
   letter-spacing: 0.3px;
 }
@@ -314,16 +314,18 @@ const recentLogs = computed(() => {
   display: flex;
   align-items: center;
   gap: 6px;
-  background: var(--amber-dim);
-  border: 1.5px solid var(--amber-glow);
-  color: var(--amber2);
-  padding: 9px 14px;
+  background: var(--amber);
+  border: none;
+  color: #fff;
+  padding: 9px 16px;
   border-radius: 12px;
   font-size: 13px;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
   -webkit-tap-highlight-color: transparent;
   transition: all 0.15s;
+  box-shadow: 0 3px 12px var(--amber-glow);
 }
 .add-batch-btn:active { transform: scale(0.96); }
 
@@ -335,14 +337,14 @@ const recentLogs = computed(() => {
   overflow: hidden;
   border: 1px solid var(--border2);
 }
-.hero-profit { background: linear-gradient(145deg, #091C2E 0%, #0A2240 50%, #0B1E38 100%); }
-.hero-loss { background: linear-gradient(145deg, #1C0912 0%, #240F18 50%, #1A0B14 100%); }
+.hero-profit { background: linear-gradient(160deg, #3D2014 0%, #2A1810 60%, #1A0E08 100%); }
+.hero-loss   { background: linear-gradient(160deg, #3D100E 0%, #2A0C0A 60%, #1A0808 100%); }
 
 .hero-bg-orb {
   position: absolute;
   top: -40px; right: -40px;
-  width: 120px; height: 120px;
-  background: radial-gradient(circle, rgba(245,166,35,0.10) 0%, transparent 70%);
+  width: 140px; height: 140px;
+  background: radial-gradient(circle, rgba(196,98,45,0.12) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -422,8 +424,8 @@ const recentLogs = computed(() => {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(245,166,35,0.07);
-  border: 1px solid rgba(245,166,35,0.18);
+  background: rgba(196,98,45,0.08);
+  border: 1px solid rgba(196,98,45,0.22);
   border-radius: 13px;
   padding: 11px 14px;
   margin-bottom: 8px;
@@ -461,7 +463,7 @@ const recentLogs = computed(() => {
 .stripe-meat { background: var(--meat); }
 
 .batch-icon { font-size: 18px; flex-shrink: 0; margin: 0 2px; }
-.batch-name { font-size: 14px; font-weight: 600; letter-spacing: -0.1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.batch-name { font-size: 14px; font-weight: 700; letter-spacing: -0.1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .batch-meta { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
 .batch-meta span { font-size: 11px; color: var(--text3); font-weight: 500; }
 .batch-meta .dot { color: var(--text4); }
@@ -472,13 +474,13 @@ const recentLogs = computed(() => {
 
 /* Onboard card */
 .onboard-card {
-  background: linear-gradient(145deg, var(--card) 0%, #162238 100%);
+  background: linear-gradient(145deg, var(--card) 0%, #2A1810 100%);
   border: 1px solid var(--border2);
   text-align: center;
   padding: 24px 20px 20px;
 }
 .onboard-emoji { font-size: 40px; margin-bottom: 10px; }
-.onboard-title { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 8px; }
+.onboard-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: 700; margin-bottom: 8px; }
 .onboard-desc { font-size: 13px; color: var(--text2); line-height: 1.5; max-width: 260px; margin: 0 auto 18px; }
 .onboard-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .onboard-mode {

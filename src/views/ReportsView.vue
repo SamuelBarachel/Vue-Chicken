@@ -273,10 +273,10 @@ function getMortIcon(c: string) { return { disease:'🦠',predator:'🦊',heat:'
 .flex-shrink-0 { flex-shrink:0; }
 
 /* Hero */
-.rpt-hero { border-radius:22px;padding:22px 20px;border:1px solid var(--border2);position:relative;overflow:hidden; }
-.hero-profit { background:linear-gradient(145deg,#071A12 0%,#0A2218 60%,#071A12 100%); }
-.hero-loss { background:linear-gradient(145deg,#1A0709 0%,#22090B 60%,#1A0709 100%); }
-.rpt-hero-bg { position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:radial-gradient(circle,rgba(245,166,35,.1) 0%,transparent 70%);border-radius:50%;pointer-events:none; }
+.rpt-hero { border-radius:22px;padding:22px 20px;border:1px solid var(--border);position:relative;overflow:hidden; }
+.hero-profit { background:linear-gradient(145deg,#3D2014 0%,#2A1810 60%,#1A0E08 100%); }
+.hero-loss   { background:linear-gradient(145deg,#3D100E 0%,#2A0C0A 60%,#1A0808 100%); }
+.rpt-hero-bg { position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:radial-gradient(circle,rgba(196,98,45,.12) 0%,transparent 70%);border-radius:50%;pointer-events:none; }
 .rpt-hero-label { font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px; }
 .rpt-hero-pills { display:flex;gap:10px; }
 .rpt-pill { display:flex;align-items:center;gap:8px;flex:1;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:10px; }
