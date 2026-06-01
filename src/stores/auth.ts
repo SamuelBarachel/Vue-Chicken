@@ -1,5 +1,13 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import { auth } from '@/firebase'
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut as fbSignOut,
+  onAuthStateChanged,
+  type User,
+} from 'firebase/auth'
 
 export interface AuthUser {
   id: string
@@ -14,31 +22,36 @@ export const useAuthStore = defineStore('auth', () => {
   const ready = ref(false)
   const redirectError = ref('')
 
-  async function loadUser() {
-    try {
-      const res = await fetch('/api/auth/user')
-      const data = await res.json()
-      if (data && data.id) {
-        user.value = data
-        uid.value = data.id
-      } else {
-        user.value = null
-        uid.value = null
-      }
-    } catch {
-      user.value = null
-      uid.value = null
-    } finally {
-      ready.value = true
-    }
+  function loadUser(): Promise<void> {
+    return new Promise((resolve) => {
+      onAuthStateChanged(auth, (fbUser: User | null) => {
+        if (fbUser) {
+          user.value = {
+            id: fbUser.uid,
+            username: fbUser.displayName || fbUser.email || fbUser.uid,
+            email: fbUser.email || undefined,
+            profileImage: fbUser.photoURL || undefined,
+          }
+          uid.value = fbUser.uid
+        } else {
+          user.value = null
+          uid.value = null
+        }
+        ready.value = true
+        resolve()
+      })
+    })
   }
 
-  function signIn() {
-    window.location.href = '/api/auth/login'
+  async function signIn() {
+    const provider = new GoogleAuthProvider()
+    await signInWithPopup(auth, provider)
   }
 
-  function signOut() {
-    window.location.href = '/api/auth/logout'
+  async function signOut() {
+    await fbSignOut(auth)
+    user.value = null
+    uid.value = null
   }
 
   return { user, uid, ready, redirectError, loadUser, signIn, signOut }

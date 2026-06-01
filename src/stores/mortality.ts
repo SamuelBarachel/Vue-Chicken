@@ -1,27 +1,33 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Mortality } from '@/types'
-import { api } from '@/api'
+import { db } from '@/firebase'
+import {
+  collection, query, where, orderBy, getDocs,
+  addDoc, deleteDoc, doc, serverTimestamp,
+} from 'firebase/firestore'
 
 export const useMortalityStore = defineStore('mortality', () => {
   const records = ref<Mortality[]>([])
 
-  async function init(_uid: string | null) {
-    if (!_uid) { records.value = []; return }
+  async function init(uid: string | null) {
+    if (!uid) { records.value = []; return }
     try {
-      records.value = await api.get('/mortality')
+      const q = query(collection(db, 'mortality'), where('userId', '==', uid), orderBy('date', 'desc'))
+      const snap = await getDocs(q)
+      records.value = snap.docs.map(d => ({ id: d.id, ...d.data() } as Mortality))
     } catch (e) {
       console.error('mortality init', e)
     }
   }
 
-  async function add(data: Omit<Mortality, 'id'>) {
-    const created = await api.post('/mortality', data)
-    records.value.unshift(created)
+  async function add(data: Omit<Mortality, 'id'> & { userId: string }) {
+    const ref2 = await addDoc(collection(db, 'mortality'), { ...data, createdAt: serverTimestamp() })
+    records.value.unshift({ id: ref2.id, ...data } as Mortality)
   }
 
   async function remove(id: string) {
-    await api.delete(`/mortality/${id}`)
+    await deleteDoc(doc(db, 'mortality', id))
     records.value = records.value.filter(r => r.id !== id)
   }
 

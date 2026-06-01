@@ -722,14 +722,14 @@ const envForm = ref({ date:today(), time:nowTime(), temperature:0, humidity:0, a
 
 function saveExpense() {
   if (!expForm.value.amount || !expForm.value.description) return
-  expenseStore.add({ batchId:id.value, ...expForm.value })
+  expenseStore.add({ userId:authStore.uid!, batchId:id.value, ...expForm.value })
   logActivity('expense', `💸 ${expForm.value.description} — ${formatCurrency(expForm.value.amount, sym.value)} [${expForm.value.category}]`)
   expForm.value = { category:'feed', amount:0, date:today(), description:'' }
   showExpenseModal.value = false
 }
 function saveRevenue() {
   if (!revForm.value.quantity || !revForm.value.unitPrice) return
-  revenueStore.add({ batchId:id.value, ...revForm.value, amount:revForm.value.quantity*revForm.value.unitPrice })
+  revenueStore.add({ userId:authStore.uid!, batchId:id.value, ...revForm.value, amount:revForm.value.quantity*revForm.value.unitPrice })
   logActivity('revenue', `💵 Sale: ${revForm.value.quantity} × ${formatCurrency(revForm.value.unitPrice, sym.value)} = ${formatCurrency(revForm.value.quantity*revForm.value.unitPrice, sym.value)} [${revForm.value.type}]`)
   revForm.value = { type:'eggs', quantity:0, unitPrice:0, date:today(), notes:'' }
   showRevenueModal.value = false
@@ -737,21 +737,21 @@ function saveRevenue() {
 function saveEggs() {
   const total = eggForm.value.gradeA+eggForm.value.gradeB+eggForm.value.broken
   if (!total) return
-  eggStore.add({ batchId:id.value, ...eggForm.value, totalEggs:total })
+  eggStore.add({ userId:authStore.uid!, batchId:id.value, ...eggForm.value, totalEggs:total })
   logActivity('eggs', `🥚 Collected ${total} eggs (A:${eggForm.value.gradeA} B:${eggForm.value.gradeB} ✕:${eggForm.value.broken})`)
   eggForm.value = { date:today(), gradeA:0, gradeB:0, broken:0, notes:'' }
   showEggModal.value = false
 }
 function saveWeight() {
   if (!wtForm.value.averageWeight) return
-  weightStore.add({ batchId:id.value, ...wtForm.value })
+  weightStore.add({ userId:authStore.uid!, batchId:id.value, ...wtForm.value })
   logActivity('weight', `⚖️ Weight sample: ${wtForm.value.averageWeight}${settings.weightUnit} avg (n=${wtForm.value.sampleSize})`)
   wtForm.value = { date:today(), sampleSize:20, averageWeight:0, minWeight:0, maxWeight:0, notes:'' }
   showWeightModal.value = false
 }
 function saveMortality() {
   if (!mortForm.value.count) return
-  mortalityStore.add({ batchId:id.value, ...mortForm.value })
+  mortalityStore.add({ userId:authStore.uid!, batchId:id.value, ...mortForm.value })
   const b = batch.value
   if (b) batchStore.update(id.value, { currentCount:Math.max(0,b.currentCount-mortForm.value.count) })
   logActivity('mortality', `💀 ${mortForm.value.count} bird${mortForm.value.count > 1 ? 's' : ''} lost — cause: ${mortForm.value.cause}`)
@@ -760,7 +760,7 @@ function saveMortality() {
 }
 function saveEnv() {
   if (!envForm.value.temperature) return
-  environmentStore.add({ batchId:id.value, ...envForm.value, notes:'' })
+  environmentStore.add({ userId:authStore.uid!, batchId:id.value, ...envForm.value, notes:'' })
   logActivity('env', `🌡️ Temp ${envForm.value.temperature}°${settings.temperatureUnit}, humidity ${envForm.value.humidity}%, ventilation: ${envForm.value.ventilation}`)
   envForm.value = { date:today(), time:nowTime(), temperature:0, humidity:0, ammonia:0, lightHours:0, ventilation:'good' }
   showEnvModal.value = false

@@ -1,15 +1,26 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { ActivityEntry, ActivityCategory } from '@/types'
-import { api } from '@/api'
+import { db } from '@/firebase'
+import {
+  collection, query, where, orderBy, limit, getDocs,
+  addDoc, serverTimestamp,
+} from 'firebase/firestore'
 
 export const useActivityLogStore = defineStore('activityLog', () => {
   const entries = ref<ActivityEntry[]>([])
 
-  async function init(_uid: string | null) {
-    if (!_uid) { entries.value = []; return }
+  async function init(uid: string | null) {
+    if (!uid) { entries.value = []; return }
     try {
-      entries.value = await api.get('/activity')
+      const q = query(
+        collection(db, 'activityLog'),
+        where('userId', '==', uid),
+        orderBy('timestamp', 'desc'),
+        limit(300)
+      )
+      const snap = await getDocs(q)
+      entries.value = snap.docs.map(d => ({ id: d.id, ...d.data() } as ActivityEntry))
     } catch (e) {
       console.error('activityLog init', e)
     }
@@ -33,8 +44,8 @@ export const useActivityLogStore = defineStore('activityLog', () => {
       userPhoto: user.photoURL || undefined,
       ...meta,
     }
-    const created = await api.post('/activity', entry)
-    entries.value.unshift(created)
+    const ref2 = await addDoc(collection(db, 'activityLog'), { ...entry, createdAt: serverTimestamp() })
+    entries.value.unshift({ id: ref2.id, ...entry })
   }
 
   return { entries, init, log }

@@ -4,11 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "concurrently \"npm run server:dev\" \"vite --port 5173 --host 0.0.0.0\"",
-    "server:dev": "node_modules/.bin/tsx watch server/index.ts",
-    "build": "vue-tsc --build && vite build && tsc -p tsconfig.server.json",
+    "dev": "vite --port 5000 --host 0.0.0.0",
+    "build": "vue-tsc --build && vite build",
     "preview": "vite preview",
-    "start": "node dist-server/index.js"
+    "start": "vite preview --port 5173 --host 0.0.0.0"
   },
   "dependencies": {
     "express": "^4.18.2",

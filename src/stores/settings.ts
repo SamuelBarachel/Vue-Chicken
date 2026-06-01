@@ -1,7 +1,8 @@
 import { defineStore } from 'pinia'
 import { reactive } from 'vue'
 import type { AppSettings } from '@/types'
-import { api } from '@/api'
+import { db } from '@/firebase'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
 
 const DEFAULT: AppSettings = {
   currency: 'ZiG',
@@ -14,20 +15,24 @@ const DEFAULT: AppSettings = {
 export const useSettingsStore = defineStore('settings', () => {
   const settings = reactive<AppSettings>({ ...DEFAULT })
 
-  async function init(_uid: string | null) {
-    if (!_uid) { Object.assign(settings, DEFAULT); return }
+  async function init(uid: string | null) {
+    if (!uid) { Object.assign(settings, DEFAULT); return }
     try {
-      const data = await api.get('/settings')
-      Object.assign(settings, { ...DEFAULT, ...data })
+      const snap = await getDoc(doc(db, 'settings', uid))
+      if (snap.exists()) {
+        Object.assign(settings, { ...DEFAULT, ...snap.data() })
+      } else {
+        Object.assign(settings, DEFAULT)
+      }
     } catch {
       Object.assign(settings, DEFAULT)
     }
   }
 
-  async function update(patch: Partial<AppSettings>) {
+  async function update(uid: string, patch: Partial<AppSettings>) {
     Object.assign(settings, patch)
     try {
-      await api.post('/settings', { ...settings })
+      await setDoc(doc(db, 'settings', uid), { ...settings }, { merge: true })
     } catch (e) {
       console.error('settings update', e)
     }

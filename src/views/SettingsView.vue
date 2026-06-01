@@ -356,46 +356,48 @@ import { useEnvironmentStore } from '@/stores/environment'
 import { useHealthStore } from '@/stores/health'
 
 const settingsStore = useSettingsStore()
-const { settings, update } = settingsStore
+const { settings } = settingsStore
 const authStore = useAuthStore()
 const user = authStore.user
 const notifStore = useNotificationStore()
+
+function uid() { return authStore.uid! }
 
 async function requestNotifPermission() {
   await notifStore.requestPermission()
 }
 
 async function toggleEggReminder(e: Event) {
-  await notifStore.updatePrefs({ eggReminderEnabled: (e.target as HTMLInputElement).checked })
+  await notifStore.updatePrefs(uid(), { eggReminderEnabled: (e.target as HTMLInputElement).checked })
 }
 
 async function toggleHealthAlert(e: Event) {
-  await notifStore.updatePrefs({ healthAlertEnabled: (e.target as HTMLInputElement).checked })
+  await notifStore.updatePrefs(uid(), { healthAlertEnabled: (e.target as HTMLInputElement).checked })
 }
 
 async function setEggHour(h: number) {
-  await notifStore.updatePrefs({ eggReminderHour: h })
+  await notifStore.updatePrefs(uid(), { eggReminderHour: h })
 }
 
 async function setHealthDays(d: number) {
-  await notifStore.updatePrefs({ healthAlertDaysAhead: d })
+  await notifStore.updatePrefs(uid(), { healthAlertDaysAhead: d })
 }
 
 async function toggleFeedLow(e: Event) {
-  await notifStore.updatePrefs({ feedLowAlertEnabled: (e.target as HTMLInputElement).checked })
+  await notifStore.updatePrefs(uid(), { feedLowAlertEnabled: (e.target as HTMLInputElement).checked })
 }
 async function setFeedLowDays(d: number) {
-  await notifStore.updatePrefs({ feedLowAlertDaysAhead: d })
+  await notifStore.updatePrefs(uid(), { feedLowAlertDaysAhead: d })
 }
 async function toggleFeedRate(e: Event) {
-  await notifStore.updatePrefs({ feedRateAlertEnabled: (e.target as HTMLInputElement).checked })
+  await notifStore.updatePrefs(uid(), { feedRateAlertEnabled: (e.target as HTMLInputElement).checked })
 }
 async function toggleMortalityAlert(e: Event) {
-  await notifStore.updatePrefs({ mortalityAlertEnabled: (e.target as HTMLInputElement).checked })
+  await notifStore.updatePrefs(uid(), { mortalityAlertEnabled: (e.target as HTMLInputElement).checked })
 }
 
 async function setMortalityThreshold(t: number) {
-  await notifStore.updatePrefs({ mortalityAlertThreshold: t })
+  await notifStore.updatePrefs(uid(), { mortalityAlertThreshold: t })
 }
 
 function testNotification() {
@@ -430,11 +432,11 @@ function onCurrencyChange() {
 }
 
 function saveSettings() {
-  update({ currency: currency.value, currencySymbol: symbol.value })
+  settingsStore.update(uid(), { currency: currency.value, currencySymbol: symbol.value })
 }
 
-function setWeight(u: 'kg'|'lb') { update({ weightUnit: u }) }
-function setTemp(u: 'C'|'F') { update({ temperatureUnit: u }) }
+function setWeight(u: 'kg'|'lb') { settingsStore.update(uid(), { weightUnit: u }) }
+function setTemp(u: 'C'|'F') { settingsStore.update(uid(), { temperatureUnit: u }) }
 
 function exportData() {
   const data: Record<string, any> = {
@@ -457,16 +459,17 @@ function exportData() {
 async function importData() {
   try {
     importing.value = true
+    const u = uid()
     const data = JSON.parse(importJson.value)
     const adds: Promise<any>[] = []
-    if (Array.isArray(data.vc_batches)) data.vc_batches.forEach((b: any) => { const { id, _ts, ...rest } = b; adds.push(batchStore.add(rest)) })
-    if (Array.isArray(data.vc_eggs)) data.vc_eggs.forEach((e: any) => { const { id, _ts, ...rest } = e; adds.push(eggStore.add(rest)) })
-    if (Array.isArray(data.vc_expenses)) data.vc_expenses.forEach((e: any) => { const { id, _ts, ...rest } = e; adds.push(expenseStore.add(rest)) })
-    if (Array.isArray(data.vc_revenue)) data.vc_revenue.forEach((r: any) => { const { id, _ts, ...rest } = r; adds.push(revenueStore.add(rest)) })
-    if (Array.isArray(data.vc_mortality)) data.vc_mortality.forEach((m: any) => { const { id, _ts, ...rest } = m; adds.push(mortalityStore.add(rest)) })
-    if (Array.isArray(data.vc_weights)) data.vc_weights.forEach((w: any) => { const { id, _ts, ...rest } = w; adds.push(weightStore.add(rest)) })
-    if (Array.isArray(data.vc_environment)) data.vc_environment.forEach((l: any) => { const { id, _ts, ...rest } = l; adds.push(environmentStore.add(rest)) })
-    if (Array.isArray(data.vc_health)) data.vc_health.forEach((h: any) => { const { id, _ts, ...rest } = h; adds.push(healthStore.add(rest)) })
+    if (Array.isArray(data.vc_batches)) data.vc_batches.forEach((b: any) => { const { id, _ts, createdAt, ...rest } = b; adds.push(batchStore.add({ ...rest, userId: u })) })
+    if (Array.isArray(data.vc_eggs)) data.vc_eggs.forEach((e: any) => { const { id, _ts, createdAt, ...rest } = e; adds.push(eggStore.add({ ...rest, userId: u })) })
+    if (Array.isArray(data.vc_expenses)) data.vc_expenses.forEach((e: any) => { const { id, _ts, createdAt, ...rest } = e; adds.push(expenseStore.add({ ...rest, userId: u })) })
+    if (Array.isArray(data.vc_revenue)) data.vc_revenue.forEach((r: any) => { const { id, _ts, createdAt, ...rest } = r; adds.push(revenueStore.add({ ...rest, userId: u })) })
+    if (Array.isArray(data.vc_mortality)) data.vc_mortality.forEach((m: any) => { const { id, _ts, createdAt, ...rest } = m; adds.push(mortalityStore.add({ ...rest, userId: u })) })
+    if (Array.isArray(data.vc_weights)) data.vc_weights.forEach((w: any) => { const { id, _ts, createdAt, ...rest } = w; adds.push(weightStore.add({ ...rest, userId: u })) })
+    if (Array.isArray(data.vc_environment)) data.vc_environment.forEach((l: any) => { const { id, _ts, createdAt, ...rest } = l; adds.push(environmentStore.add({ ...rest, userId: u })) })
+    if (Array.isArray(data.vc_health)) data.vc_health.forEach((h: any) => { const { id, _ts, createdAt, ...rest } = h; adds.push(healthStore.add({ ...rest, userId: u })) })
     await Promise.all(adds)
     showImport.value = false
     importJson.value = ''

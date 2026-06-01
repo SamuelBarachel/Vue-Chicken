@@ -1,34 +1,40 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { EggCollection } from '@/types'
-import { api } from '@/api'
+import { db } from '@/firebase'
+import {
+  collection, query, where, orderBy, getDocs,
+  addDoc, updateDoc, deleteDoc, doc, serverTimestamp,
+} from 'firebase/firestore'
 
 export const useEggStore = defineStore('eggs', () => {
   const collections = ref<EggCollection[]>([])
 
-  async function init(_uid: string | null) {
-    if (!_uid) { collections.value = []; return }
+  async function init(uid: string | null) {
+    if (!uid) { collections.value = []; return }
     try {
-      collections.value = await api.get('/eggs')
+      const q = query(collection(db, 'eggs'), where('userId', '==', uid), orderBy('date', 'desc'))
+      const snap = await getDocs(q)
+      collections.value = snap.docs.map(d => ({ id: d.id, ...d.data() } as EggCollection))
     } catch (e) {
       console.error('eggs init', e)
     }
   }
 
-  async function add(data: Omit<EggCollection, 'id'>) {
-    const created = await api.post('/eggs', data)
-    collections.value.unshift(created)
+  async function add(data: Omit<EggCollection, 'id'> & { userId: string }) {
+    const ref2 = await addDoc(collection(db, 'eggs'), { ...data, createdAt: serverTimestamp() })
+    collections.value.unshift({ id: ref2.id, ...data } as EggCollection)
   }
 
   async function remove(id: string) {
-    await api.delete(`/eggs/${id}`)
+    await deleteDoc(doc(db, 'eggs', id))
     collections.value = collections.value.filter(c => c.id !== id)
   }
 
   async function update(id: string, patch: Partial<EggCollection>) {
-    const updated = await api.patch(`/eggs/${id}`, patch)
+    await updateDoc(doc(db, 'eggs', id), patch)
     const idx = collections.value.findIndex(c => c.id === id)
-    if (idx !== -1) collections.value[idx] = { ...collections.value[idx], ...updated }
+    if (idx !== -1) collections.value[idx] = { ...collections.value[idx], ...patch }
   }
 
   function forBatch(batchId: string) {

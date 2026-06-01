@@ -295,26 +295,26 @@ function logActivity(category: Parameters<typeof activityLogStore.log>[0], descr
 
 function saveExpense() {
   if (!expForm.value.amount || !expForm.value.description) return
-  expenseStore.add({ batchId:selectedBatchId.value, ...expForm.value })
+  expenseStore.add({ userId:authStore.uid!, batchId:selectedBatchId.value, ...expForm.value })
   logActivity('expense', `💸 ${expForm.value.description} — ${formatCurrency(expForm.value.amount, sym.value)} [${expForm.value.category}]`)
   expForm.value = { category:'feed', amount:0, date:today(), description:'' }; flash()
 }
 function saveEggs() {
   const total = eggForm.value.gradeA+eggForm.value.gradeB+eggForm.value.broken
   if (!total) return
-  eggStore.add({ batchId:selectedBatchId.value, ...eggForm.value, totalEggs:total, notes:'' })
+  eggStore.add({ userId:authStore.uid!, batchId:selectedBatchId.value, ...eggForm.value, totalEggs:total, notes:'' })
   logActivity('eggs', `🥚 Collected ${total} eggs (A:${eggForm.value.gradeA} B:${eggForm.value.gradeB} ✕:${eggForm.value.broken})`)
   eggForm.value = { date:today(), gradeA:0, gradeB:0, broken:0 }; flash()
 }
 function saveWeight() {
   if (!wtForm.value.averageWeight) return
-  weightStore.add({ batchId:selectedBatchId.value, ...wtForm.value, notes:'' })
+  weightStore.add({ userId:authStore.uid!, batchId:selectedBatchId.value, ...wtForm.value, notes:'' })
   logActivity('weight', `⚖️ Weight sample: ${wtForm.value.averageWeight}${settings.weightUnit} avg (n=${wtForm.value.sampleSize})`)
   wtForm.value = { date:today(), sampleSize:20, averageWeight:0, minWeight:0, maxWeight:0 }; flash()
 }
 function saveMortality() {
   if (!mortForm.value.count) return
-  mortalityStore.add({ batchId:selectedBatchId.value, ...mortForm.value })
+  mortalityStore.add({ userId:authStore.uid!, batchId:selectedBatchId.value, ...mortForm.value })
   const b = selectedBatch.value
   if (b) batchStore.update(selectedBatchId.value, { currentCount:Math.max(0,b.currentCount-mortForm.value.count) })
   logActivity('mortality', `💀 ${mortForm.value.count} bird${mortForm.value.count > 1 ? 's' : ''} lost — cause: ${mortForm.value.cause}`)
@@ -322,13 +322,13 @@ function saveMortality() {
 }
 function saveEnv() {
   if (!envForm.value.temperature) return
-  environmentStore.add({ batchId:selectedBatchId.value, ...envForm.value, notes:'' })
+  environmentStore.add({ userId:authStore.uid!, batchId:selectedBatchId.value, ...envForm.value, notes:'' })
   logActivity('env', `🌡️ Temp ${envForm.value.temperature}°${settings.temperatureUnit}, humidity ${envForm.value.humidity}%, ventilation: ${envForm.value.ventilation}`)
   envForm.value = { date:today(), time:nowTime(), temperature:0, humidity:0, ammonia:0, lightHours:0, ventilation:'good' }; flash()
 }
 function saveRevenue() {
   if (!revForm.value.quantity || !revForm.value.unitPrice) return
-  revenueStore.add({ batchId:selectedBatchId.value, ...revForm.value, amount:revForm.value.quantity*revForm.value.unitPrice })
+  revenueStore.add({ userId:authStore.uid!, batchId:selectedBatchId.value, ...revForm.value, amount:revForm.value.quantity*revForm.value.unitPrice })
   logActivity('revenue', `💵 Sale: ${revForm.value.quantity} × ${formatCurrency(revForm.value.unitPrice, sym.value)} = ${formatCurrency(revForm.value.quantity * revForm.value.unitPrice, sym.value)} [${revForm.value.type}]`)
   revForm.value = { type:'eggs', quantity:0, unitPrice:0, date:today(), notes:'' }; flash()
 }
@@ -347,6 +347,7 @@ function saveFeed() {
   const f = feedForm.value
   if (!f.quantityKg || !f.durationDays) return
   feedStockStore.add({
+    userId: authStore.uid!,
     batchId: selectedBatchId.value,
     date: f.date,
     quantityKg: f.quantityKg,

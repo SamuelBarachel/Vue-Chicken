@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, reactive } from 'vue'
-import { api } from '@/api'
+import { db } from '@/firebase'
+import { doc, getDoc, setDoc } from 'firebase/firestore'
 
 export interface NotificationPrefs {
   eggReminderEnabled: boolean
@@ -40,17 +41,17 @@ export const useNotificationStore = defineStore('notifications', () => {
     }
   }
 
-  async function init(_uid: string | null) {
+  async function init(uid: string | null) {
     checkSupport()
-    if (!_uid) {
-      Object.assign(prefs, DEFAULTS)
-      fcmToken.value = null
-      return
-    }
+    if (!uid) { Object.assign(prefs, DEFAULTS); fcmToken.value = null; return }
     try {
-      const data = await api.get('/notification-prefs')
-      Object.assign(prefs, { ...DEFAULTS, ...data })
-    } catch (e) {
+      const snap = await getDoc(doc(db, 'notificationPrefs', uid))
+      if (snap.exists()) {
+        Object.assign(prefs, { ...DEFAULTS, ...snap.data() })
+      } else {
+        Object.assign(prefs, DEFAULTS)
+      }
+    } catch {
       Object.assign(prefs, DEFAULTS)
     }
   }
@@ -67,10 +68,10 @@ export const useNotificationStore = defineStore('notifications', () => {
     }
   }
 
-  async function updatePrefs(patch: Partial<NotificationPrefs>) {
+  async function updatePrefs(uid: string, patch: Partial<NotificationPrefs>) {
     Object.assign(prefs, patch)
     try {
-      await api.post('/notification-prefs', { ...prefs })
+      await setDoc(doc(db, 'notificationPrefs', uid), { ...prefs }, { merge: true })
     } catch (e) {
       console.error('updatePrefs', e)
     }
@@ -93,15 +94,5 @@ export const useNotificationStore = defineStore('notifications', () => {
     }
   }
 
-  return {
-    permission,
-    fcmToken,
-    prefs,
-    loading,
-    supported,
-    init,
-    requestPermission,
-    updatePrefs,
-    showLocal,
-  }
+  return { permission, fcmToken, prefs, loading, supported, init, requestPermission, updatePrefs, showLocal }
 })

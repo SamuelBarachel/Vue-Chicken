@@ -139,12 +139,14 @@ import { useRouter, useRoute } from 'vue-router'
 import { useBatchStore } from '@/stores/batches'
 import { useExpenseStore } from '@/stores/expenses'
 import { useSettingsStore } from '@/stores/settings'
+import { useAuthStore } from '@/stores/auth'
 import { formatCurrency, today } from '@/utils/formatters'
 
 const router = useRouter()
 const route = useRoute()
 const batchStore = useBatchStore()
 const expenseStore = useExpenseStore()
+const authStore = useAuthStore()
 const { settings } = useSettingsStore()
 const sym = computed(() => settings.currencySymbol)
 
@@ -169,8 +171,10 @@ const isValid = computed(() => form.value.name.trim() && form.value.startDate &&
 
 async function save() {
   if (!isValid.value) return
+  const uid = authStore.uid!
   const data = {
     ...form.value,
+    userId: uid,
     currentCount: isEdit.value ? (existing.value?.currentCount || form.value.initialCount) : form.value.initialCount,
   }
   if (isEdit.value) {
@@ -180,6 +184,7 @@ async function save() {
     const batch = await batchStore.add(data)
     if (form.value.purchaseCostPerBird && form.value.initialCount) {
       await expenseStore.add({
+        userId: uid,
         batchId: batch.id,
         category: 'chicks',
         amount: form.value.purchaseCostPerBird * form.value.initialCount,
