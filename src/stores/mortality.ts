@@ -1,20 +1,34 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Mortality } from '@/types'
-import { uid } from '@/utils/formatters'
-
-function load(): Mortality[] {
-  try { const r = localStorage.getItem('vc_mortality'); return r ? JSON.parse(r) : [] } catch { return [] }
-}
+import { collection, onSnapshot, addDoc, deleteDoc, doc } from 'firebase/firestore'
+import { db } from '@/firebase'
 
 export const useMortalityStore = defineStore('mortality', () => {
-  const records = ref<Mortality[]>(load())
-  function save() { localStorage.setItem('vc_mortality', JSON.stringify(records.value)) }
+  const records = ref<Mortality[]>([])
+  let uid: string | null = null
+  let unsubscribe: (() => void) | null = null
 
-  function add(data: Omit<Mortality, 'id'>) {
-    records.value.unshift({ ...data, id: uid() }); save()
+  function init(userId: string | null) {
+    if (unsubscribe) { unsubscribe(); unsubscribe = null }
+    uid = userId
+    if (!uid) { records.value = []; return }
+    unsubscribe = onSnapshot(collection(db, 'users', uid, 'mortality'), snap => {
+      records.value = snap.docs
+        .map(d => ({ id: d.id, ...d.data() } as Mortality))
+        .sort((a, b) => (b as any)._ts - (a as any)._ts)
+    })
   }
-  function remove(id: string) { records.value = records.value.filter(r => r.id !== id); save() }
+
+  async function add(data: Omit<Mortality, 'id'>) {
+    if (!uid) return
+    await addDoc(collection(db, 'users', uid, 'mortality'), { ...data, _ts: Date.now() })
+  }
+
+  async function remove(id: string) {
+    if (!uid) return
+    await deleteDoc(doc(db, 'users', uid, 'mortality', id))
+  }
 
   function forBatch(batchId: string) {
     return computed(() => records.value.filter(r => r.batchId === batchId))
@@ -26,5 +40,5 @@ export const useMortalityStore = defineStore('mortality', () => {
 
   const totalAll = computed(() => records.value.reduce((s, r) => s + r.count, 0))
 
-  return { records, add, remove, forBatch, totalForBatch, totalAll }
+  return { records, init, add, remove, forBatch, totalForBatch, totalAll }
 })

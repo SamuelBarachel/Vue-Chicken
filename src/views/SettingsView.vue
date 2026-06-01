@@ -6,17 +6,6 @@
     </div>
 
     <div class="section">
-      <!-- Farm identity -->
-      <div class="settings-section">
-        <div class="settings-label">🏡 Farm Identity</div>
-        <div class="card card-sm">
-          <div class="form-group" style="margin-bottom:0">
-            <label class="form-label">Farm Name</label>
-            <input v-model="farmName" class="form-input" placeholder="My Chicken Farm" />
-          </div>
-        </div>
-      </div>
-
       <!-- Currency -->
       <div class="settings-section">
         <div class="settings-label">💱 Currency</div>
@@ -61,15 +50,15 @@
             <div class="form-group" style="margin-bottom:0">
               <label class="form-label">Weight</label>
               <div class="toggle-row">
-                <button class="tgl-btn" :class="{ active: weightUnit === 'kg' }" @click="setWeight('kg')">kg</button>
-                <button class="tgl-btn" :class="{ active: weightUnit === 'lb' }" @click="setWeight('lb')">lb</button>
+                <button class="tgl-btn" :class="{ active: settings.weightUnit === 'kg' }" @click="setWeight('kg')">kg</button>
+                <button class="tgl-btn" :class="{ active: settings.weightUnit === 'lb' }" @click="setWeight('lb')">lb</button>
               </div>
             </div>
             <div class="form-group" style="margin-bottom:0">
               <label class="form-label">Temperature</label>
               <div class="toggle-row">
-                <button class="tgl-btn" :class="{ active: tempUnit === 'C' }" @click="setTemp('C')">°C</button>
-                <button class="tgl-btn" :class="{ active: tempUnit === 'F' }" @click="setTemp('F')">°F</button>
+                <button class="tgl-btn" :class="{ active: settings.temperatureUnit === 'C' }" @click="setTemp('C')">°C</button>
+                <button class="tgl-btn" :class="{ active: settings.temperatureUnit === 'F' }" @click="setTemp('F')">°F</button>
               </div>
             </div>
           </div>
@@ -139,7 +128,9 @@
           </button>
           <div v-if="showImport" class="mt-2">
             <textarea v-model="importJson" class="form-textarea" placeholder="Paste exported JSON here…"></textarea>
-            <button class="btn btn-primary btn-full mt-2" @click="importData" :disabled="!importJson">Import & Reload</button>
+            <button class="btn btn-primary btn-full mt-2" @click="importData" :disabled="!importJson || importing">
+              {{ importing ? 'Importing…' : 'Import & Reload' }}
+            </button>
           </div>
         </div>
       </div>
@@ -147,15 +138,41 @@
       <!-- Danger zone -->
       <div class="settings-section">
         <div class="settings-label" style="color:var(--red2)">⚠️ Danger Zone</div>
-        <button class="btn btn-danger btn-full" style="height:48px" @click="clearAll">🗑️ Clear All Farm Data</button>
+        <button class="btn btn-danger btn-full" style="height:48px" @click="clearAll" :disabled="clearing">
+          {{ clearing ? 'Clearing…' : '🗑️ Clear All Farm Data' }}
+        </button>
         <div class="text-xs text-dim mt-2" style="text-align:center">Permanently deletes all batches, expenses & logs</div>
+      </div>
+
+      <!-- Account -->
+      <div class="settings-section">
+        <div class="settings-label">👤 Account</div>
+        <div class="card card-sm">
+          <div class="account-row" v-if="user">
+            <div class="account-avatar">{{ user.displayName?.[0] || '?' }}</div>
+            <div class="account-info">
+              <div class="text-sm font-bold">{{ user.displayName || 'Unknown' }}</div>
+              <div class="text-xs text-muted">{{ user.email }}</div>
+            </div>
+          </div>
+          <div class="divider" v-if="user"></div>
+          <button class="data-action-btn" @click="signOut">
+            <div class="da-icon" style="background:var(--red-dim)">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--red2)" stroke-width="2.2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            </div>
+            <div class="flex-1">
+              <div class="text-sm font-bold" style="color:var(--red2)">Sign Out</div>
+              <div class="text-xs text-muted">Your data stays in the cloud</div>
+            </div>
+          </button>
+        </div>
       </div>
 
       <!-- App info -->
       <div class="app-info card">
         <div style="font-size:44px;margin-bottom:12px">🐔</div>
         <div class="font-heavy" style="font-size:18px;letter-spacing:-.3px">Vue Chicken</div>
-        <div class="text-xs text-muted mt-1">v1.0.0 · Mobile Farm Manager</div>
+        <div class="text-xs text-muted mt-1">v2.0.0 · Cloud Farm Manager</div>
         <div class="text-xs text-muted mt-1">Track eggs · meat · costs · profits</div>
       </div>
     </div>
@@ -165,18 +182,38 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useSettingsStore } from '@/stores/settings'
+import { useAuthStore } from '@/stores/auth'
+import { useBatchStore } from '@/stores/batches'
+import { useEggStore } from '@/stores/eggs'
+import { useExpenseStore } from '@/stores/expenses'
+import { useRevenueStore } from '@/stores/revenue'
+import { useMortalityStore } from '@/stores/mortality'
+import { useWeightStore } from '@/stores/weights'
+import { useEnvironmentStore } from '@/stores/environment'
+import { useHealthStore } from '@/stores/health'
 
-const { settings, update } = useSettingsStore()
+const settingsStore = useSettingsStore()
+const { settings, update } = settingsStore
+const authStore = useAuthStore()
+const user = authStore.user
+
+const batchStore = useBatchStore()
+const eggStore = useEggStore()
+const expenseStore = useExpenseStore()
+const revenueStore = useRevenueStore()
+const mortalityStore = useMortalityStore()
+const weightStore = useWeightStore()
+const environmentStore = useEnvironmentStore()
+const healthStore = useHealthStore()
 
 const sym: Record<string,string> = { ZiG:'ZiG',USD:'$',EUR:'€',GBP:'£',KES:'KSh',NGN:'₦',ZAR:'R',GHS:'GH₵',UGX:'USh',TZS:'TSh',INR:'₹',PHP:'₱',BDT:'৳',BRL:'R$',MXN:'$',IDR:'Rp',CNY:'¥' }
 
-const farmName = ref(localStorage.getItem('vc_farm_name') || '')
 const currency = ref(settings.currency)
 const symbol = ref(settings.currencySymbol)
-const weightUnit = ref(settings.weightUnit)
-const tempUnit = ref(settings.temperatureUnit)
 const showImport = ref(false)
 const importJson = ref('')
+const importing = ref(false)
+const clearing = ref(false)
 
 function onCurrencyChange() {
   if (currency.value !== 'Custom') symbol.value = sym[currency.value] || currency.value
@@ -184,37 +221,75 @@ function onCurrencyChange() {
 }
 
 function saveSettings() {
-  localStorage.setItem('vc_farm_name', farmName.value)
   update({ currency: currency.value, currencySymbol: symbol.value })
 }
 
-function setWeight(u: 'kg'|'lb') { weightUnit.value = u; update({ weightUnit: u }) }
-function setTemp(u: 'C'|'F') { tempUnit.value = u; update({ temperatureUnit: u }) }
+function setWeight(u: 'kg'|'lb') { update({ weightUnit: u }) }
+function setTemp(u: 'C'|'F') { update({ temperatureUnit: u }) }
 
 function exportData() {
-  const data: Record<string,any> = {}
-  ['vc_batches','vc_expenses','vc_revenue','vc_mortality','vc_eggs','vc_weights','vc_environment','vc_health','vc_settings'].forEach(k => {
-    const v = localStorage.getItem(k); if (v) data[k] = JSON.parse(v)
-  })
+  const data: Record<string, any> = {
+    vc_batches: batchStore.batches,
+    vc_eggs: eggStore.collections,
+    vc_expenses: expenseStore.expenses,
+    vc_revenue: revenueStore.revenues,
+    vc_mortality: mortalityStore.records,
+    vc_weights: weightStore.records,
+    vc_environment: environmentStore.logs,
+    vc_health: healthStore.records,
+    vc_settings: settings,
+  }
   const a = document.createElement('a')
-  a.href = URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}))
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }))
   a.download = `vue-chicken-${new Date().toISOString().split('T')[0]}.json`
   a.click()
 }
 
-function importData() {
+async function importData() {
   try {
+    importing.value = true
     const data = JSON.parse(importJson.value)
-    Object.entries(data).forEach(([k,v]) => localStorage.setItem(k,JSON.stringify(v)))
-    window.location.reload()
-  } catch { alert('Invalid JSON data.') }
+    const adds: Promise<any>[] = []
+    if (Array.isArray(data.vc_batches)) data.vc_batches.forEach((b: any) => { const { id, _ts, ...rest } = b; adds.push(batchStore.add(rest)) })
+    if (Array.isArray(data.vc_eggs)) data.vc_eggs.forEach((e: any) => { const { id, _ts, ...rest } = e; adds.push(eggStore.add(rest)) })
+    if (Array.isArray(data.vc_expenses)) data.vc_expenses.forEach((e: any) => { const { id, _ts, ...rest } = e; adds.push(expenseStore.add(rest)) })
+    if (Array.isArray(data.vc_revenue)) data.vc_revenue.forEach((r: any) => { const { id, _ts, ...rest } = r; adds.push(revenueStore.add(rest)) })
+    if (Array.isArray(data.vc_mortality)) data.vc_mortality.forEach((m: any) => { const { id, _ts, ...rest } = m; adds.push(mortalityStore.add(rest)) })
+    if (Array.isArray(data.vc_weights)) data.vc_weights.forEach((w: any) => { const { id, _ts, ...rest } = w; adds.push(weightStore.add(rest)) })
+    if (Array.isArray(data.vc_environment)) data.vc_environment.forEach((l: any) => { const { id, _ts, ...rest } = l; adds.push(environmentStore.add(rest)) })
+    if (Array.isArray(data.vc_health)) data.vc_health.forEach((h: any) => { const { id, _ts, ...rest } = h; adds.push(healthStore.add(rest)) })
+    await Promise.all(adds)
+    showImport.value = false
+    importJson.value = ''
+    alert('Import complete! Your data is now synced.')
+  } catch (e) {
+    alert('Invalid JSON data.')
+  } finally {
+    importing.value = false
+  }
 }
 
-function clearAll() {
-  if (confirm('Delete ALL farm data permanently? This cannot be undone.')) {
-    ['vc_batches','vc_expenses','vc_revenue','vc_mortality','vc_eggs','vc_weights','vc_environment','vc_health'].forEach(k => localStorage.removeItem(k))
-    window.location.reload()
+async function clearAll() {
+  if (!confirm('Delete ALL farm data permanently? This cannot be undone.')) return
+  clearing.value = true
+  try {
+    const removes: Promise<any>[] = []
+    batchStore.batches.forEach(b => removes.push(batchStore.remove(b.id)))
+    eggStore.collections.forEach(e => removes.push(eggStore.remove(e.id)))
+    expenseStore.expenses.forEach(e => removes.push(expenseStore.remove(e.id)))
+    revenueStore.revenues.forEach(r => removes.push(revenueStore.remove(r.id)))
+    mortalityStore.records.forEach(m => removes.push(mortalityStore.remove(m.id)))
+    weightStore.records.forEach(w => removes.push(weightStore.remove(w.id)))
+    environmentStore.logs.forEach(l => removes.push(environmentStore.remove(l.id)))
+    healthStore.records.forEach(h => removes.push(healthStore.remove(h.id)))
+    await Promise.all(removes)
+  } finally {
+    clearing.value = false
   }
+}
+
+async function signOut() {
+  await authStore.signOut()
 }
 </script>
 
@@ -238,6 +313,10 @@ function clearAll() {
 
 .data-action-btn { display:flex;align-items:center;gap:12px;width:100%;background:none;border:none;cursor:pointer;padding:10px 0;-webkit-tap-highlight-color:transparent; }
 .da-icon { width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:var(--text2); }
+
+.account-row { display:flex;align-items:center;gap:12px;padding:10px 0; }
+.account-avatar { width:38px;height:38px;border-radius:50%;background:var(--amber);color:#000;font-weight:800;font-size:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0; }
+.account-info { flex:1;min-width:0; }
 
 .app-info { text-align:center;padding:28px 20px; }
 </style>

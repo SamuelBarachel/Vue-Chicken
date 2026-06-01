@@ -1,35 +1,39 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { Batch } from '@/types'
-import { uid } from '@/utils/formatters'
-
-function load(): Batch[] {
-  try {
-    const raw = localStorage.getItem('vc_batches')
-    return raw ? JSON.parse(raw) : []
-  } catch { return [] }
-}
+import { collection, onSnapshot, addDoc, deleteDoc, doc, setDoc } from 'firebase/firestore'
+import { db } from '@/firebase'
 
 export const useBatchStore = defineStore('batches', () => {
-  const batches = ref<Batch[]>(load())
+  const batches = ref<Batch[]>([])
+  let uid: string | null = null
+  let unsubscribe: (() => void) | null = null
 
-  function save() { localStorage.setItem('vc_batches', JSON.stringify(batches.value)) }
-
-  function add(data: Omit<Batch, 'id'>): Batch {
-    const batch: Batch = { ...data, id: uid() }
-    batches.value.unshift(batch)
-    save()
-    return batch
+  function init(userId: string | null) {
+    if (unsubscribe) { unsubscribe(); unsubscribe = null }
+    uid = userId
+    if (!uid) { batches.value = []; return }
+    unsubscribe = onSnapshot(collection(db, 'users', uid, 'batches'), snap => {
+      batches.value = snap.docs
+        .map(d => ({ id: d.id, ...d.data() } as Batch))
+        .sort((a, b) => (b as any)._ts - (a as any)._ts)
+    })
   }
 
-  function update(id: string, patch: Partial<Batch>) {
-    const idx = batches.value.findIndex(b => b.id === id)
-    if (idx !== -1) { batches.value[idx] = { ...batches.value[idx], ...patch }; save() }
+  async function add(data: Omit<Batch, 'id'>): Promise<Batch> {
+    if (!uid) throw new Error('Not authenticated')
+    const docRef = await addDoc(collection(db, 'users', uid, 'batches'), { ...data, _ts: Date.now() })
+    return { ...data, id: docRef.id }
   }
 
-  function remove(id: string) {
-    batches.value = batches.value.filter(b => b.id !== id)
-    save()
+  async function update(id: string, patch: Partial<Batch>) {
+    if (!uid) return
+    await setDoc(doc(db, 'users', uid, 'batches', id), patch, { merge: true })
+  }
+
+  async function remove(id: string) {
+    if (!uid) return
+    await deleteDoc(doc(db, 'users', uid, 'batches', id))
   }
 
   function getById(id: string) {
@@ -40,5 +44,5 @@ export const useBatchStore = defineStore('batches', () => {
   const eggBatches = computed(() => batches.value.filter(b => b.mode === 'egg'))
   const meatBatches = computed(() => batches.value.filter(b => b.mode === 'meat'))
 
-  return { batches, add, update, remove, getById, active, eggBatches, meatBatches }
+  return { batches, init, add, update, remove, getById, active, eggBatches, meatBatches }
 })

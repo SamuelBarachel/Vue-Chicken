@@ -167,19 +167,19 @@ const form = ref({
 
 const isValid = computed(() => form.value.name.trim() && form.value.startDate && form.value.initialCount > 0)
 
-function save() {
+async function save() {
   if (!isValid.value) return
   const data = {
     ...form.value,
     currentCount: isEdit.value ? (existing.value?.currentCount || form.value.initialCount) : form.value.initialCount,
   }
   if (isEdit.value) {
-    batchStore.update(route.params.id as string, data)
+    await batchStore.update(route.params.id as string, data)
     router.push(`/batches/${route.params.id}`)
   } else {
-    const batch = batchStore.add(data)
+    const batch = await batchStore.add(data)
     if (form.value.purchaseCostPerBird && form.value.initialCount) {
-      expenseStore.add({
+      await expenseStore.add({
         batchId: batch.id,
         category: 'chicks',
         amount: form.value.purchaseCostPerBird * form.value.initialCount,
