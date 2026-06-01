@@ -20,6 +20,7 @@ import BottomNav from './components/BottomNav.vue'
   height: 100dvh;
   overflow: hidden;
   background: var(--bg);
+  width: 100%;
   max-width: 480px;
   margin: 0 auto;
   position: relative;
