@@ -55,7 +55,7 @@ function isActive(item: typeof navItems[0]) {
   display: flex;
   align-items: center;
   height: var(--nav-h);
-  background: rgba(10, 19, 37, 0.96);
+  background: rgba(6, 14, 7, 0.96);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid var(--border);
@@ -80,7 +80,7 @@ function isActive(item: typeof navItems[0]) {
   position: relative;
 }
 
-.nav-item.active { color: var(--amber); }
+.nav-item.active { color: var(--brand); }
 
 .nav-icon-wrap {
   position: relative;
@@ -103,17 +103,17 @@ function isActive(item: typeof navItems[0]) {
 .nav-item:nth-child(3) .nav-icon-wrap {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, var(--amber) 0%, #FF9500 100%);
+  background: linear-gradient(135deg, var(--brand) 0%, var(--amber) 100%);
   border-radius: 16px;
-  color: #000;
+  color: #fff;
   margin-top: -4px;
-  box-shadow: 0 4px 18px var(--amber-glow2);
+  box-shadow: 0 4px 18px rgba(34,197,94,0.35);
   transition: all 0.25s cubic-bezier(0.34,1.4,0.64,1);
 }
-.nav-item:nth-child(3) { color: #000; }
+.nav-item:nth-child(3) { color: var(--text3); }
 .nav-item:nth-child(3).active .nav-icon { transform: scale(1) translateY(0); }
 .nav-item:nth-child(3):active .nav-icon-wrap { transform: scale(0.92); }
-.nav-item:nth-child(3).active .nav-icon-wrap { box-shadow: 0 6px 24px var(--amber-glow2); }
+.nav-item:nth-child(3).active .nav-icon-wrap { box-shadow: 0 6px 24px rgba(34,197,94,0.45); }
 
 .nav-pip {
   position: absolute;
@@ -122,7 +122,7 @@ function isActive(item: typeof navItems[0]) {
   transform: translateX(-50%);
   width: 4px;
   height: 4px;
-  background: var(--amber);
+  background: var(--brand);
   border-radius: 2px;
   animation: pip-in 0.3s cubic-bezier(0.34,1.4,0.64,1);
 }

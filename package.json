@@ -14,6 +14,7 @@
     "express": "^4.18.2",
     "express-session": "^1.17.3",
     "firebase": "^12.14.0",
+    "jspdf": "^4.2.1",
     "openid-client": "^6.1.7",
     "pg": "^8.11.3",
     "pinia": "^2.1.7",

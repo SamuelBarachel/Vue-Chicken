@@ -7,6 +7,11 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         </button>
         <div class="flex gap-2">
+          <button class="btn btn-ghost btn-sm" :class="{ 'pdf-generating': pdfGenerating }" @click="exportPdf" :disabled="pdfGenerating">
+            <svg v-if="!pdfGenerating" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span v-if="pdfGenerating" class="pdf-spin">⟳</span>
+            {{ pdfGenerating ? 'Generating…' : 'PDF' }}
+          </button>
           <button class="btn btn-ghost btn-sm" @click="$router.push(`/batches/${batch.id}/edit`)">Edit</button>
         </div>
       </div>
@@ -531,6 +536,7 @@
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import ModalSheet from '@/components/ModalSheet.vue'
+import { useBatchPdfReport } from '@/composables/useBatchPdfReport'
 import { useBatchStore } from '@/stores/batches'
 import { useExpenseStore } from '@/stores/expenses'
 import { useRevenueStore } from '@/stores/revenue'
@@ -558,9 +564,31 @@ const activityLogStore = useActivityLogStore()
 const authStore = useAuthStore()
 const { settings } = useSettingsStore()
 const sym = computed(() => settings.currencySymbol)
+const { generateReport } = useBatchPdfReport()
+const pdfGenerating = ref(false)
 
 const id = computed(() => route.params.id as string)
 const batch = computed(() => batchStore.getById(id.value))
+
+async function exportPdf() {
+  if (!batch.value) return
+  pdfGenerating.value = true
+  await new Promise(r => setTimeout(r, 80))
+  try {
+    generateReport({
+      batch: batch.value,
+      currencySymbol: sym.value,
+      weightUnit: settings.weightUnit,
+      expenses: batchExpenses.value,
+      revenues: batchRevenues.value,
+      eggs: batchEggs.value,
+      weights: batchWeights.value,
+      mortality: batchMortality.value,
+    })
+  } finally {
+    pdfGenerating.value = false
+  }
+}
 
 const tabs = computed(() => [
   { id: 'overview', label: 'Overview' },
@@ -742,6 +770,11 @@ function saveEnv() {
 <style scoped>
 .min-w-0 { min-width:0; }
 .flex-shrink-0 { flex-shrink:0; }
+
+/* PDF export */
+.pdf-generating { opacity:0.7; cursor:not-allowed; }
+.pdf-spin { display:inline-block; animation:spin 0.8s linear infinite; }
+@keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
 
 /* Banner */
 .batch-banner { border-radius: 20px; overflow: hidden; border: 1px solid var(--border2); position: relative; }

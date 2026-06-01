@@ -1,21 +1,21 @@
 import * as client from 'openid-client';
 import pool from './db.js';
-let oidcConfig = null;
-async function getOidcConfig() {
-    if (!oidcConfig) {
-        oidcConfig = await client.discovery(new URL('https://replit.com/oidc'), process.env.REPL_ID, undefined, undefined, { execute: [client.allowInsecureRequests] });
-    }
-    return oidcConfig;
+async function getOidcConfig(issuerUrl) {
+    return await client.discovery(new URL(issuerUrl), process.env.REPL_ID, undefined, undefined, { execute: [client.allowInsecureRequests] });
+}
+function getIssuerUrl() {
+    return process.env.ISSUER_URL || 'https://replit.com/oidc';
 }
 function getCallbackUrl(req) {
     const host = req.get('host') || process.env.REPLIT_DEV_DOMAIN || 'localhost:5000';
-    const proto = host.includes('replit') ? 'https' : 'http';
+    const proto = host.includes('replit') || host.includes('localhost') === false ? 'https' : 'http';
     return `${proto}://${host}/api/auth/callback`;
 }
 export function setupAuth(app) {
     app.get('/api/auth/login', async (req, res) => {
         try {
-            const config = await getOidcConfig();
+            const issuerUrl = getIssuerUrl();
+            const config = await getOidcConfig(issuerUrl);
             const redirectUri = getCallbackUrl(req);
             const codeVerifier = client.randomPKCECodeVerifier();
             const codeChallenge = await client.calculatePKCECodeChallenge(codeVerifier);
@@ -24,6 +24,7 @@ export function setupAuth(app) {
             req.session.codeVerifier = codeVerifier;
             req.session.state = state;
             req.session.nonce = nonce;
+            req.session.issuerUrl = issuerUrl;
             const params = {
                 redirect_uri: redirectUri,
                 scope: 'openid profile email',
@@ -42,7 +43,8 @@ export function setupAuth(app) {
     });
     app.get('/api/auth/callback', async (req, res) => {
         try {
-            const config = await getOidcConfig();
+            const issuerUrl = req.session.issuerUrl || getIssuerUrl();
+            const config = await getOidcConfig(issuerUrl);
             const redirectUri = getCallbackUrl(req);
             const codeVerifier = req.session.codeVerifier;
             const expectedState = req.session.state;
@@ -66,6 +68,7 @@ export function setupAuth(app) {
             delete req.session.codeVerifier;
             delete req.session.state;
             delete req.session.nonce;
+            delete req.session.issuerUrl;
             res.redirect('/');
         }
         catch (err) {
