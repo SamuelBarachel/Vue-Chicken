@@ -93,6 +93,16 @@ export interface HealthRecord {
   nextDue?: string
 }
 
+export interface FeedStock {
+  id: string
+  batchId: string
+  date: string
+  quantityKg: number
+  durationDays: number
+  feedType?: string
+  notes?: string
+}
+
 export interface AppSettings {
   currency: string
   currencySymbol: string

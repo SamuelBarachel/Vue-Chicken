@@ -3,10 +3,15 @@ import { useBatchStore } from '@/stores/batches'
 import { useEggStore } from '@/stores/eggs'
 import { useHealthStore } from '@/stores/health'
 import { useMortalityStore } from '@/stores/mortality'
+import { useFeedStockStore } from '@/stores/feedStock'
 
 const TODAY_KEY = 'vc_notif_last_egg_check'
 const HEALTH_KEY = 'vc_notif_last_health_check'
 const MORTALITY_KEY = 'vc_notif_last_mortality_check'
+const FEED_KEY = 'vc_notif_last_feed_check'
+
+// Recommended daily feed per bird in grams
+const RECOMMENDED_G: Record<string, number> = { egg: 120, meat: 100 }
 
 function todayStr() {
   return new Date().toISOString().split('T')[0]
@@ -113,6 +118,74 @@ export function useNotificationScheduler() {
           )
         }
         localStorage.setItem(HEALTH_KEY, today)
+      }
+    }
+
+    // ── Feed stock checks ─────────────────────────────────────────
+    if (notifStore.prefs.feedLowAlertEnabled || notifStore.prefs.feedRateAlertEnabled) {
+      const lastCheck = localStorage.getItem(FEED_KEY)
+      if (lastCheck !== today) {
+        const feedStore = useFeedStockStore()
+        const batchStore3 = useBatchStore()
+
+        const lowMessages: string[] = []
+        const underMessages: string[] = []
+        const overMessages: string[] = []
+
+        for (const batch of batchStore3.batches.filter(b => b.status === 'active')) {
+          const entry = feedStore.records
+            .filter(r => r.batchId === batch.id)
+            .sort((a, b) => b.date.localeCompare(a.date))[0]
+          if (!entry) continue
+
+          const daysSince = Math.floor(
+            (new Date(today + 'T00:00:00').getTime() - new Date(entry.date + 'T00:00:00').getTime()) / 86_400_000
+          )
+          const daysRemaining = entry.durationDays - daysSince
+
+          // Low stock check
+          if (notifStore.prefs.feedLowAlertEnabled && daysRemaining <= notifStore.prefs.feedLowAlertDaysAhead) {
+            const when = daysRemaining <= 0 ? 'today' : daysRemaining === 1 ? 'tomorrow' : `in ${daysRemaining} days`
+            lowMessages.push(`${batch.name}: runs out ${when}`)
+          }
+
+          // Under/overfeeding check
+          if (notifStore.prefs.feedRateAlertEnabled && batch.currentCount > 0) {
+            const actualGPerBirdPerDay = (entry.quantityKg * 1000) / entry.durationDays / batch.currentCount
+            const recommended = RECOMMENDED_G[batch.mode] ?? 110
+            const ratio = actualGPerBirdPerDay / recommended
+
+            if (ratio < 0.80) {
+              underMessages.push(`${batch.name}: ${Math.round(actualGPerBirdPerDay)}g/bird/day (need ~${recommended}g)`)
+            } else if (ratio > 1.25) {
+              overMessages.push(`${batch.name}: ${Math.round(actualGPerBirdPerDay)}g/bird/day (need ~${recommended}g)`)
+            }
+          }
+        }
+
+        if (lowMessages.length > 0) {
+          notifStore.showLocal(
+            `🌾 Feed running low`,
+            lowMessages.slice(0, 3).join('\n'),
+            'feed-low'
+          )
+        }
+        if (underMessages.length > 0) {
+          notifStore.showLocal(
+            `⬇️ Underfeeding detected`,
+            underMessages.slice(0, 3).join('\n'),
+            'feed-under'
+          )
+        }
+        if (overMessages.length > 0) {
+          notifStore.showLocal(
+            `⬆️ Overfeeding detected`,
+            overMessages.slice(0, 3).join('\n'),
+            'feed-over'
+          )
+        }
+
+        localStorage.setItem(FEED_KEY, today)
       }
     }
   }

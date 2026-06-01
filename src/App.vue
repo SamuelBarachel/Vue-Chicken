@@ -81,11 +81,13 @@ import { useWeightStore } from './stores/weights'
 import { useEnvironmentStore } from './stores/environment'
 import { useHealthStore } from './stores/health'
 import { useSettingsStore } from './stores/settings'
+import { useFeedStockStore } from './stores/feedStock'
 import { useNotificationStore } from './stores/notifications'
 import { useNotificationScheduler } from './composables/useNotificationScheduler'
 import BottomNav from './components/BottomNav.vue'
 
 const authStore = useAuthStore()
+const feedStockStore = useFeedStockStore()
 const notificationStore = useNotificationStore()
 const { runChecks } = useNotificationScheduler()
 const batchStore = useBatchStore()
@@ -116,6 +118,7 @@ function initStores(uid: string | null) {
   environmentStore.init(uid)
   healthStore.init(uid)
   settingsStore.init(uid)
+  feedStockStore.init(uid)
   notificationStore.init(uid)
   if (uid) {
     // Slight delay so stores have time to populate from Firestore

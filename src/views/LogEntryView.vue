@@ -156,6 +156,39 @@
           <button class="btn btn-danger btn-full" style="height:50px" @click="saveMortality" :disabled="!mortForm.count">💀 Record Loss</button>
         </div>
 
+        <!-- FEED REPLENISHMENT -->
+        <div v-if="logType === 'feed'" class="log-form card">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Date replenished</label>
+              <input v-model="feedForm.date" type="date" class="form-input" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Feed type (optional)</label>
+              <input v-model="feedForm.feedType" class="form-input" placeholder="e.g. Layer mash" />
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Quantity (kg)</label>
+              <input v-model.number="feedForm.quantityKg" type="number" class="form-input" style="font-size:22px;font-weight:800;text-align:center" placeholder="50" step="0.5" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Should last (days)</label>
+              <input v-model.number="feedForm.durationDays" type="number" class="form-input" style="font-size:22px;font-weight:800;text-align:center" placeholder="7" min="1" />
+            </div>
+          </div>
+          <div v-if="feedRateInfo" class="feed-rate-banner"
+            :class="feedRateInfo.ratio < 0.80 ? 'banner-danger' : feedRateInfo.ratio > 1.25 ? 'banner-warn' : 'banner-ok'">
+            <div class="frb-row">
+              <span>{{ feedRateInfo.ratio < 0.80 ? '⬇️ Underfeeding' : feedRateInfo.ratio > 1.25 ? '⬆️ Overfeeding' : '✅ Feed rate looks good' }}</span>
+              <span class="frb-val">{{ feedRateInfo.actualG }}g/bird/day</span>
+            </div>
+            <div class="frb-sub">Recommended for {{ selectedBatch?.mode === 'egg' ? 'layers' : 'broilers' }}: ~{{ feedRateInfo.recommended }}g/bird/day</div>
+          </div>
+          <button class="btn btn-primary btn-full mt-3" style="height:50px" @click="saveFeed" :disabled="!feedForm.quantityKg || !feedForm.durationDays">🌾 Log Feed Stock</button>
+        </div>
+
         <!-- ENVIRONMENT -->
         <div v-if="logType === 'env'" class="log-form card">
           <div class="form-row">
@@ -201,6 +234,7 @@ import { useEggStore } from '@/stores/eggs'
 import { useWeightStore } from '@/stores/weights'
 import { useEnvironmentStore } from '@/stores/environment'
 import { useSettingsStore } from '@/stores/settings'
+import { useFeedStockStore } from '@/stores/feedStock'
 import { formatCurrency, today, nowTime, weeksOld } from '@/utils/formatters'
 
 const router = useRouter()
@@ -211,6 +245,7 @@ const mortalityStore = useMortalityStore()
 const eggStore = useEggStore()
 const weightStore = useWeightStore()
 const environmentStore = useEnvironmentStore()
+const feedStockStore = useFeedStockStore()
 const { settings } = useSettingsStore()
 const sym = computed(() => settings.currencySymbol)
 
@@ -223,6 +258,7 @@ const logTypes = computed(() => {
   const base = [
     { id:'expense', icon:'💰', label:'Cost' },
     { id:'revenue', icon:'💵', label:'Sale' },
+    { id:'feed', icon:'🌾', label:'Feed' },
     { id:'mortality', icon:'💀', label:'Loss' },
     { id:'env', icon:'🌡️', label:'Temp' },
   ]
@@ -241,6 +277,7 @@ function flash() { showSuccess.value = true; setTimeout(() => showSuccess.value 
 
 const expForm = ref({ category:'feed' as any, amount:0, date:today(), description:'' })
 const eggForm = ref({ date:today(), gradeA:0, gradeB:0, broken:0 })
+const feedForm = ref({ date:today(), quantityKg:0, durationDays:7, feedType:'' })
 const wtForm = ref({ date:today(), sampleSize:20, averageWeight:0, minWeight:0, maxWeight:0 })
 const mortForm = ref({ count:1, date:today(), cause:'unknown' as any, notes:'' })
 const envForm = ref({ date:today(), time:nowTime(), temperature:0, humidity:0, ammonia:0, lightHours:0, ventilation:'good' as any })
@@ -278,6 +315,30 @@ function saveRevenue() {
   if (!revForm.value.quantity || !revForm.value.unitPrice) return
   revenueStore.add({ batchId:selectedBatchId.value, ...revForm.value, amount:revForm.value.quantity*revForm.value.unitPrice })
   revForm.value = { type:'eggs', quantity:0, unitPrice:0, date:today(), notes:'' }; flash()
+}
+
+const RECOMMENDED_G: Record<string, number> = { egg: 120, meat: 100 }
+const feedRateInfo = computed(() => {
+  const b = selectedBatch.value
+  if (!b || !feedForm.value.quantityKg || !feedForm.value.durationDays || !b.currentCount) return null
+  const actualG = (feedForm.value.quantityKg * 1000) / feedForm.value.durationDays / b.currentCount
+  const recommended = RECOMMENDED_G[b.mode] ?? 110
+  const ratio = actualG / recommended
+  return { actualG: Math.round(actualG), recommended, ratio }
+})
+
+function saveFeed() {
+  const f = feedForm.value
+  if (!f.quantityKg || !f.durationDays) return
+  feedStockStore.add({
+    batchId: selectedBatchId.value,
+    date: f.date,
+    quantityKg: f.quantityKg,
+    durationDays: f.durationDays,
+    feedType: f.feedType || undefined,
+  })
+  feedForm.value = { date: today(), quantityKg: 0, durationDays: 7, feedType: '' }
+  flash()
 }
 </script>
 
@@ -336,6 +397,13 @@ function saveRevenue() {
 .progress-banner { background:var(--amber-dim);border:1px solid var(--amber-glow);border-radius:12px;padding:10px 14px;font-size:13px;font-weight:600;color:var(--amber2);margin-top:10px; }
 .banner-danger { background:var(--red-dim);border-color:rgba(255,64,96,.2);color:var(--red2); }
 .banner-ok { background:var(--green-dim);border-color:rgba(0,200,150,.2);color:var(--green2); }
+
+/* Feed rate banner */
+.feed-rate-banner { border-radius:12px;padding:11px 14px;margin-top:10px; }
+.frb-row { display:flex;align-items:center;justify-content:space-between;font-size:13px;font-weight:700; }
+.frb-val { font-size:15px;font-weight:900;letter-spacing:-.5px; }
+.frb-sub { font-size:11px;margin-top:4px;opacity:.75; }
+.banner-warn { background:rgba(255,120,0,.10);border:1px solid rgba(255,120,0,.25);color:#ff9800; }
 
 /* Toast */
 .success-toast {

@@ -10,6 +10,9 @@ export interface NotificationPrefs {
   healthAlertDaysAhead: number
   mortalityAlertEnabled: boolean
   mortalityAlertThreshold: number
+  feedLowAlertEnabled: boolean
+  feedLowAlertDaysAhead: number
+  feedRateAlertEnabled: boolean
 }
 
 const DEFAULTS: NotificationPrefs = {
@@ -19,6 +22,9 @@ const DEFAULTS: NotificationPrefs = {
   healthAlertDaysAhead: 1,
   mortalityAlertEnabled: false,
   mortalityAlertThreshold: 3,
+  feedLowAlertEnabled: false,
+  feedLowAlertDaysAhead: 2,
+  feedRateAlertEnabled: false,
 }
 
 export const useNotificationStore = defineStore('notifications', () => {

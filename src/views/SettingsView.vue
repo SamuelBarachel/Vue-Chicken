@@ -181,6 +181,47 @@
 
               <div class="divider" style="margin:10px 0"></div>
 
+              <!-- Feed stock alerts -->
+              <div class="notif-row">
+                <div class="notif-row-left">
+                  <div class="text-sm font-bold">🌾 Feed running-low alert</div>
+                  <div class="text-xs text-muted">Warn before feed stock is expected to run out</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" :checked="notifStore.prefs.feedLowAlertEnabled" @change="toggleFeedLow" />
+                  <span class="toggle-track"></span>
+                </label>
+              </div>
+
+              <div v-if="notifStore.prefs.feedLowAlertEnabled" class="notif-sub-row">
+                <label class="form-label" style="margin-bottom:6px">Warn how many days before run-out</label>
+                <div class="toggle-row" style="max-width:220px">
+                  <button
+                    v-for="d in [1, 2, 3, 5]"
+                    :key="d"
+                    class="tgl-btn"
+                    :class="{ active: notifStore.prefs.feedLowAlertDaysAhead === d }"
+                    @click="setFeedLowDays(d)"
+                  >{{ d }} day{{ d > 1 ? 's' : '' }}</button>
+                </div>
+              </div>
+
+              <div class="divider" style="margin:10px 0"></div>
+
+              <!-- Feed rate alerts -->
+              <div class="notif-row">
+                <div class="notif-row-left">
+                  <div class="text-sm font-bold">⚖️ Under / overfeeding alert</div>
+                  <div class="text-xs text-muted">Alert if feed rate is &lt;80% or &gt;125% of recommended</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" :checked="notifStore.prefs.feedRateAlertEnabled" @change="toggleFeedRate" />
+                  <span class="toggle-track"></span>
+                </label>
+              </div>
+
+              <div class="divider" style="margin:10px 0"></div>
+
               <!-- Mortality spike -->
               <div class="notif-row">
                 <div class="notif-row-left">
@@ -340,6 +381,15 @@ async function setHealthDays(d: number) {
   await notifStore.updatePrefs({ healthAlertDaysAhead: d })
 }
 
+async function toggleFeedLow(e: Event) {
+  await notifStore.updatePrefs({ feedLowAlertEnabled: (e.target as HTMLInputElement).checked })
+}
+async function setFeedLowDays(d: number) {
+  await notifStore.updatePrefs({ feedLowAlertDaysAhead: d })
+}
+async function toggleFeedRate(e: Event) {
+  await notifStore.updatePrefs({ feedRateAlertEnabled: (e.target as HTMLInputElement).checked })
+}
 async function toggleMortalityAlert(e: Event) {
   await notifStore.updatePrefs({ mortalityAlertEnabled: (e.target as HTMLInputElement).checked })
 }
