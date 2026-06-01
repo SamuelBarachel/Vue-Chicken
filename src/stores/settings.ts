@@ -3,8 +3,8 @@ import { ref } from 'vue'
 import type { AppSettings } from '@/types'
 
 const DEFAULT: AppSettings = {
-  currency: 'USD',
-  currencySymbol: '$',
+  currency: 'ZiG',
+  currencySymbol: 'ZiG',
   weightUnit: 'kg',
   temperatureUnit: 'C',
   darkMode: true,

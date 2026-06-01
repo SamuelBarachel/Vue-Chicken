@@ -25,6 +25,7 @@
             <div class="form-group" style="margin-bottom:0">
               <label class="form-label">Currency</label>
               <select v-model="currency" class="form-select" @change="onCurrencyChange">
+                <option value="ZiG">ZiG — Zimbabwe Gold (ZiG)</option>
                 <option value="USD">USD — US Dollar ($)</option>
                 <option value="EUR">EUR — Euro (€)</option>
                 <option value="GBP">GBP — British Pound (£)</option>
@@ -167,7 +168,7 @@ import { useSettingsStore } from '@/stores/settings'
 
 const { settings, update } = useSettingsStore()
 
-const sym: Record<string,string> = { USD:'$',EUR:'€',GBP:'£',KES:'KSh',NGN:'₦',ZAR:'R',GHS:'GH₵',UGX:'USh',TZS:'TSh',INR:'₹',PHP:'₱',BDT:'৳',BRL:'R$',MXN:'$',IDR:'Rp',CNY:'¥' }
+const sym: Record<string,string> = { ZiG:'ZiG',USD:'$',EUR:'€',GBP:'£',KES:'KSh',NGN:'₦',ZAR:'R',GHS:'GH₵',UGX:'USh',TZS:'TSh',INR:'₹',PHP:'₱',BDT:'৳',BRL:'R$',MXN:'$',IDR:'Rp',CNY:'¥' }
 
 const farmName = ref(localStorage.getItem('vc_farm_name') || '')
 const currency = ref(settings.currency)
