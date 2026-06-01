@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: vue-chicken
+    env: node
+    plan: free
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SESSION_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: vue-chicken-db
+          property: connectionString
+      - key: ISSUER_URL
+        value: https://replit.com/oidc
+      - key: REPL_ID
+        sync: false
+
+databases:
+  - name: vue-chicken-db
+    plan: free
+    databaseName: vue_chicken
