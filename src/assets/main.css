@@ -109,9 +109,9 @@ body {
 }
 
 .page-title {
-  font-size: 28px;
-  font-weight: 900;
-  letter-spacing: -0.8px;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
   color: var(--text);
   line-height: 1;
 }
@@ -352,15 +352,15 @@ body {
 }
 
 .stat-value {
-  font-size: 26px;
-  font-weight: 900;
-  letter-spacing: -0.8px;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.4px;
   color: var(--text);
   line-height: 1;
 }
 
-.stat-value-sm { font-size: 19px; font-weight: 800; letter-spacing: -0.5px; }
-.stat-value-lg { font-size: 34px; font-weight: 900; letter-spacing: -1px; line-height: 1; }
+.stat-value-sm { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; }
+.stat-value-lg { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; line-height: 1; }
 
 .stat-sub {
   font-size: 11px;
@@ -486,7 +486,7 @@ body {
   padding: 4px 20px 16px;
 }
 
-.modal-title { font-size: 19px; font-weight: 800; letter-spacing: -0.3px; }
+.modal-title { font-size: 16px; font-weight: 700; letter-spacing: -0.2px; }
 .modal-body { padding: 0 20px 4px; }
 
 /* ── Alert ── */
@@ -542,15 +542,15 @@ body {
 .profit-negative { color: var(--red2); font-weight: 800; }
 
 .big-num {
-  font-size: 38px;
-  font-weight: 900;
-  letter-spacing: -1.5px;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
   line-height: 1;
 }
 .big-num-lg {
-  font-size: 48px;
-  font-weight: 900;
-  letter-spacing: -2px;
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.6px;
   line-height: 1;
 }
 

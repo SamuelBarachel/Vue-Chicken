@@ -168,45 +168,45 @@ function latestWeight(id: string) {
 .batch-card {
   background: var(--card);
   border: 1px solid var(--border2);
-  border-radius: 20px;
+  border-radius: 14px;
   overflow: hidden;
   cursor: pointer;
   transition: all 0.2s;
   position: relative;
 }
-.batch-card:active { transform: scale(0.98); }
+.batch-card:active { background: rgba(255,255,255,0.02); }
 .bc-egg:active { border-color: var(--egg); }
 .bc-meat:active { border-color: var(--meat); }
 
-.bc-stripe { height: 3px; width: 100%; }
+.bc-stripe { height: 2px; width: 100%; }
 .stripe-egg { background: linear-gradient(90deg, var(--egg) 0%, #FCD34D 100%); }
 .stripe-meat { background: linear-gradient(90deg, var(--meat) 0%, #FF6B6B 100%); }
 
 .bc-head {
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 14px 16px 12px;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px 10px;
 }
-.bc-emoji { font-size: 28px; line-height: 1; flex-shrink: 0; margin-top: 2px; }
-.bc-name { font-size: 16px; font-weight: 800; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.bc-breed { font-size: 12px; color: var(--text3); font-weight: 500; margin-top: 2px; }
-.bc-badges { display: flex; flex-direction: column; gap: 4px; align-items: flex-end; flex-shrink: 0; }
+.bc-emoji { font-size: 20px; line-height: 1; flex-shrink: 0; }
+.bc-name { font-size: 14px; font-weight: 700; letter-spacing: -0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bc-breed { font-size: 11px; color: var(--text3); font-weight: 500; margin-top: 2px; }
+.bc-badges { display: flex; flex-direction: row; gap: 4px; align-items: center; flex-shrink: 0; }
 
 .bc-metrics {
   display: flex;
   align-items: center;
-  padding: 10px 16px;
-  background: rgba(0,0,0,0.15);
+  padding: 9px 14px;
+  background: rgba(0,0,0,0.12);
   border-top: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
 }
 .bc-metric { flex: 1; text-align: center; }
-.bc-m-val { font-size: 14px; font-weight: 800; letter-spacing: -0.3px; }
-.bc-m-lbl { font-size: 9px; color: var(--text3); font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 3px; }
-.bc-mdiv { width: 1px; height: 30px; background: var(--border2); }
+.bc-m-val { font-size: 13px; font-weight: 700; letter-spacing: -0.2px; }
+.bc-m-lbl { font-size: 9px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; margin-top: 2px; }
+.bc-mdiv { width: 1px; height: 26px; background: var(--border2); }
 
-.bc-footer { padding: 12px 16px 14px; }
+.bc-footer { padding: 10px 14px 12px; }
 .bc-footer-row { display: flex; justify-content: space-between; align-items: center; }
-.bc-footer-sub { font-size: 11px; color: var(--text3); margin-top: 5px; font-weight: 500; }
+.bc-footer-sub { font-size: 11px; color: var(--text3); margin-top: 4px; font-weight: 500; }
 </style>

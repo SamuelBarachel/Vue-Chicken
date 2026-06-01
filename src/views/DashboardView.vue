@@ -55,32 +55,38 @@
 
     <!-- Quick Stats -->
     <div class="section">
-      <div class="stat-grid">
-        <div class="stat-card stat-egg" @click="$router.push('/batches')">
-          <div class="stat-icon">🥚</div>
-          <div class="stat-value">{{ eggsToday.toLocaleString() }}</div>
-          <div class="stat-label">Eggs Today</div>
-          <div class="stat-sub">{{ totalEggs.toLocaleString() }} total</div>
+      <div class="stats-group" @click="$router.push('/batches')">
+        <div class="stat-row">
+          <div class="stat-row-icon" style="background:var(--egg-dim)">🥚</div>
+          <div class="stat-row-body">
+            <div class="stat-row-label">Eggs Today</div>
+            <div class="stat-row-sub">{{ totalEggs.toLocaleString() }} total collected</div>
+          </div>
+          <div class="stat-row-value text-egg">{{ eggsToday.toLocaleString() }}</div>
         </div>
-        <div class="stat-card stat-birds" @click="$router.push('/batches')">
-          <div class="stat-icon">🐔</div>
-          <div class="stat-value">{{ totalBirds.toLocaleString() }}</div>
-          <div class="stat-label">Live Birds</div>
-          <div class="stat-sub">{{ activeBatches.length }} active batches</div>
+        <div class="stat-row">
+          <div class="stat-row-icon" style="background:rgba(59,126,255,0.10)">🐔</div>
+          <div class="stat-row-body">
+            <div class="stat-row-label">Live Birds</div>
+            <div class="stat-row-sub">{{ activeBatches.length }} active batches</div>
+          </div>
+          <div class="stat-row-value">{{ totalBirds.toLocaleString() }}</div>
         </div>
-      </div>
-      <div class="stat-grid mt-2">
-        <div class="stat-card stat-mortality" :class="mortalityHigh ? 'stat-warn' : ''">
-          <div class="stat-icon">📉</div>
-          <div class="stat-value" :class="mortalityHigh ? 'text-red' : 'text-green'">{{ mortalityRate }}%</div>
-          <div class="stat-label">Mortality Rate</div>
-          <div class="stat-sub">{{ totalMortality }} birds lost</div>
+        <div class="stat-row" :class="mortalityHigh ? 'stat-warn-row' : ''">
+          <div class="stat-row-icon" :style="{ background: mortalityHigh ? 'var(--red-dim)' : 'var(--green-dim)' }">📉</div>
+          <div class="stat-row-body">
+            <div class="stat-row-label">Mortality Rate</div>
+            <div class="stat-row-sub">{{ totalMortality }} birds lost</div>
+          </div>
+          <div class="stat-row-value" :class="mortalityHigh ? 'text-red' : 'text-green'">{{ mortalityRate }}%</div>
         </div>
-        <div class="stat-card stat-cost">
-          <div class="stat-icon">💸</div>
-          <div class="stat-value text-amber">{{ formatCurrency(costPerBird, sym) }}</div>
-          <div class="stat-label">Avg Cost / Bird</div>
-          <div class="stat-sub">all active batches</div>
+        <div class="stat-row">
+          <div class="stat-row-icon" style="background:var(--amber-dim)">💸</div>
+          <div class="stat-row-body">
+            <div class="stat-row-label">Avg Cost / Bird</div>
+            <div class="stat-row-sub">all active batches</div>
+          </div>
+          <div class="stat-row-value text-amber">{{ formatCurrency(costPerBird, sym) }}</div>
         </div>
       </div>
     </div>
@@ -323,8 +329,8 @@ const recentLogs = computed(() => {
 
 /* Hero Card */
 .hero-card {
-  border-radius: 22px;
-  padding: 22px 20px 0;
+  border-radius: 16px;
+  padding: 16px 16px 0;
   position: relative;
   overflow: hidden;
   border: 1px solid var(--border2);
@@ -335,61 +341,81 @@ const recentLogs = computed(() => {
 .hero-bg-orb {
   position: absolute;
   top: -40px; right: -40px;
-  width: 160px; height: 160px;
-  background: radial-gradient(circle, rgba(245,166,35,0.12) 0%, transparent 70%);
+  width: 120px; height: 120px;
+  background: radial-gradient(circle, rgba(245,166,35,0.10) 0%, transparent 70%);
   border-radius: 50%;
   pointer-events: none;
 }
 
 .hero-label {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   color: var(--text3);
   text-transform: uppercase;
-  letter-spacing: 1px;
-  margin-bottom: 8px;
+  letter-spacing: 0.8px;
+  margin-bottom: 5px;
 }
 
 .hero-amount {
-  font-size: 44px;
-  font-weight: 900;
-  letter-spacing: -2px;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.6px;
   line-height: 1;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
 }
-.hero-sign { font-size: 28px; vertical-align: middle; margin-right: 2px; }
+.hero-sign { font-size: 18px; vertical-align: middle; margin-right: 1px; }
 
 .hero-meta {
   display: flex;
   gap: 0;
-  padding: 14px 0;
+  padding: 12px 0;
   border-top: 1px solid rgba(255,255,255,0.06);
 }
-.hero-meta-item { flex: 1; display: flex; align-items: center; gap: 8px; padding: 0 12px; }
+.hero-meta-item { flex: 1; display: flex; align-items: center; gap: 7px; padding: 0 10px; }
 .hero-meta-item:first-child { padding-left: 0; }
 .hero-meta-item:last-child { padding-right: 0; }
 .hero-meta-div { width: 1px; background: rgba(255,255,255,0.06); }
-.hero-meta-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-.green-dot { background: var(--green2); box-shadow: 0 0 6px var(--green2); }
-.red-dot { background: var(--red2); box-shadow: 0 0 6px var(--red2); }
-.amber-dot { background: var(--amber2); box-shadow: 0 0 6px var(--amber2); }
-.hero-meta-label { font-size: 10px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
-.hero-meta-val { font-size: 14px; font-weight: 800; letter-spacing: -0.3px; margin-top: 1px; }
+.hero-meta-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; }
+.green-dot { background: var(--green2); }
+.red-dot { background: var(--red2); }
+.amber-dot { background: var(--amber2); }
+.hero-meta-label { font-size: 10px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+.hero-meta-val { font-size: 13px; font-weight: 700; letter-spacing: -0.2px; margin-top: 1px; }
 
-.hero-spark { margin: 0 -20px; opacity: 0.7; }
+.hero-spark { margin: 0 -16px; opacity: 0.6; }
 
-/* Stat cards */
-.stat-card {
+/* Stat grouped card */
+.stats-group {
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  overflow: hidden;
   cursor: pointer;
-  transition: all 0.18s;
-  padding: 16px 14px;
 }
-.stat-card:active { transform: scale(0.97); }
-.stat-icon { font-size: 20px; margin-bottom: 10px; }
-.stat-card .stat-value { font-size: 28px; font-weight: 900; letter-spacing: -1px; line-height: 1; }
-.stat-card .stat-label { font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 0.7px; margin-top: 6px; }
-.stat-card .stat-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
-.stat-warn { border-color: rgba(255,64,96,0.3) !important; background: linear-gradient(135deg, var(--card) 60%, rgba(255,64,96,0.05) 100%) !important; }
+.stats-group:active { opacity: 0.85; }
+.stat-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.stat-row:last-child { border-bottom: none; }
+.stat-row:active { background: rgba(255,255,255,0.03); }
+.stat-row-icon {
+  width: 32px; height: 32px;
+  border-radius: 9px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px;
+  flex-shrink: 0;
+}
+.stat-row-body { flex: 1; min-width: 0; }
+.stat-row-label { font-size: 13px; font-weight: 500; color: var(--text2); }
+.stat-row-sub { font-size: 11px; color: var(--text3); margin-top: 1px; }
+.stat-row-value { font-size: 15px; font-weight: 700; letter-spacing: -0.3px; flex-shrink: 0; }
+.stat-warn-row { background: rgba(255,64,96,0.04); }
+.stat-warn-row .stat-row-value { color: var(--red2); }
 
 /* Alert strip */
 .alert-strip {
@@ -405,37 +431,41 @@ const recentLogs = computed(() => {
 .alert-strip-icon { font-size: 16px; flex-shrink: 0; }
 
 /* Batch list */
-.batch-list { display: flex; flex-direction: column; gap: 8px; }
+.batch-list {
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  overflow: hidden;
+}
 .batch-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  background: var(--card);
-  border: 1px solid var(--border2);
-  border-radius: var(--radius);
-  padding: 13px 14px 13px 0;
+  gap: 11px;
+  padding: 11px 13px 11px 0;
   cursor: pointer;
-  transition: all 0.18s;
-  overflow: hidden;
+  transition: background 0.15s;
+  border-bottom: 1px solid var(--border);
   position: relative;
+  overflow: hidden;
 }
-.batch-row:active { transform: scale(0.98); border-color: var(--amber); }
+.batch-row:last-child { border-bottom: none; }
+.batch-row:active { background: rgba(255,255,255,0.03); }
 
 .batch-mode-stripe {
-  width: 4px;
+  width: 3px;
   align-self: stretch;
   border-radius: 0 2px 2px 0;
   flex-shrink: 0;
 }
-.stripe-egg { background: linear-gradient(to bottom, var(--egg), #D4A017); }
-.stripe-meat { background: linear-gradient(to bottom, var(--meat), #C62828); }
+.stripe-egg { background: var(--egg); }
+.stripe-meat { background: var(--meat); }
 
-.batch-icon { font-size: 24px; flex-shrink: 0; margin: 0 2px; }
-.batch-name { font-size: 15px; font-weight: 700; letter-spacing: -0.2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.batch-meta { display: flex; align-items: center; gap: 5px; margin-top: 3px; flex-wrap: wrap; }
-.batch-meta span { font-size: 12px; color: var(--text2); font-weight: 500; }
-.batch-meta .dot { color: var(--text3); }
-.batch-mort { text-align: right; font-size: 14px; font-weight: 800; flex-shrink: 0; }
+.batch-icon { font-size: 18px; flex-shrink: 0; margin: 0 2px; }
+.batch-name { font-size: 14px; font-weight: 600; letter-spacing: -0.1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.batch-meta { display: flex; align-items: center; gap: 4px; margin-top: 2px; }
+.batch-meta span { font-size: 11px; color: var(--text3); font-weight: 500; }
+.batch-meta .dot { color: var(--text4); }
+.batch-mort { text-align: right; font-size: 12px; font-weight: 700; flex-shrink: 0; }
 
 .min-w-0 { min-width: 0; }
 .flex-shrink-0 { flex-shrink: 0; }
@@ -445,21 +475,21 @@ const recentLogs = computed(() => {
   background: linear-gradient(145deg, var(--card) 0%, #162238 100%);
   border: 1px solid var(--border2);
   text-align: center;
-  padding: 32px 24px 24px;
+  padding: 24px 20px 20px;
 }
-.onboard-emoji { font-size: 56px; margin-bottom: 14px; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.4)); }
-.onboard-title { font-size: 20px; font-weight: 900; letter-spacing: -0.5px; margin-bottom: 10px; }
-.onboard-desc { font-size: 14px; color: var(--text2); line-height: 1.6; max-width: 280px; margin: 0 auto 24px; }
-.onboard-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.onboard-emoji { font-size: 40px; margin-bottom: 10px; }
+.onboard-title { font-size: 16px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 8px; }
+.onboard-desc { font-size: 13px; color: var(--text2); line-height: 1.5; max-width: 260px; margin: 0 auto 18px; }
+.onboard-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .onboard-mode {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 18px 12px;
-  border-radius: 16px;
+  gap: 6px;
+  padding: 14px 10px;
+  border-radius: 12px;
   cursor: pointer;
-  border: 1.5px solid transparent;
+  border: 1px solid transparent;
   transition: all 0.2s;
   -webkit-tap-highlight-color: transparent;
 }
@@ -467,28 +497,31 @@ const recentLogs = computed(() => {
 .egg-mode:active { transform: scale(0.96); }
 .meat-mode { background: var(--meat-dim); border-color: var(--meat-glow); }
 .meat-mode:active { transform: scale(0.96); }
-.onboard-mode-icon { font-size: 32px; }
-.onboard-mode-label { font-size: 13px; font-weight: 800; }
+.onboard-mode-icon { font-size: 24px; }
+.onboard-mode-label { font-size: 12px; font-weight: 700; }
 .egg-mode .onboard-mode-label { color: var(--egg2); }
 .meat-mode .onboard-mode-label { color: var(--meat2); }
 
-/* Mode pills */
-.mode-pills { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+/* Mode pills — nested in one card */
+.mode-pills {
+  background: var(--card);
+  border: 1px solid var(--border2);
+  border-radius: 14px;
+  overflow: hidden;
+}
 .mode-pill {
   display: flex;
   align-items: center;
   gap: 10px;
-  border-radius: var(--radius);
-  padding: 14px;
-  border: 1px solid transparent;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
 }
-.egg-pill { background: var(--egg-dim); border-color: var(--egg-glow); }
-.meat-pill { background: var(--meat-dim); border-color: var(--meat-glow); }
-.mode-pill-icon { font-size: 22px; }
-.mode-pill-val { font-size: 20px; font-weight: 900; letter-spacing: -0.5px; }
+.mode-pill:last-child { border-bottom: none; }
+.mode-pill-icon { font-size: 16px; flex-shrink: 0; }
+.mode-pill-val { font-size: 14px; font-weight: 700; letter-spacing: -0.2px; }
 .egg-pill .mode-pill-val { color: var(--egg2); }
 .meat-pill .mode-pill-val { color: var(--meat2); }
-.mode-pill-label { font-size: 10px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+.mode-pill-label { font-size: 12px; color: var(--text2); font-weight: 500; margin-top: 1px; }
 .mode-pill-total { font-size: 11px; color: var(--text3); margin-left: auto; font-weight: 600; }
 
 /* Activity */
