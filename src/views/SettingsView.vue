@@ -181,6 +181,33 @@
 
               <div class="divider" style="margin:10px 0"></div>
 
+              <!-- Mortality spike -->
+              <div class="notif-row">
+                <div class="notif-row-left">
+                  <div class="text-sm font-bold">⚠️ Mortality spike alert</div>
+                  <div class="text-xs text-muted">Alert when deaths in a batch hit your threshold</div>
+                </div>
+                <label class="toggle-switch">
+                  <input type="checkbox" :checked="notifStore.prefs.mortalityAlertEnabled" @change="toggleMortalityAlert" />
+                  <span class="toggle-track"></span>
+                </label>
+              </div>
+
+              <div v-if="notifStore.prefs.mortalityAlertEnabled" class="notif-sub-row">
+                <label class="form-label" style="margin-bottom:6px">Alert when deaths reach</label>
+                <div class="toggle-row" style="max-width:260px">
+                  <button
+                    v-for="t in [1, 2, 3, 5, 10]"
+                    :key="t"
+                    class="tgl-btn"
+                    :class="{ active: notifStore.prefs.mortalityAlertThreshold === t }"
+                    @click="setMortalityThreshold(t)"
+                  >{{ t }}+ bird{{ t === 1 ? '' : 's' }}</button>
+                </div>
+              </div>
+
+              <div class="divider" style="margin:10px 0"></div>
+
               <button class="data-action-btn" @click="testNotification">
                 <div class="da-icon" style="background:var(--amber-dim, rgba(245,166,35,.12))">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--amber)" stroke-width="2.2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -311,6 +338,14 @@ async function setEggHour(h: number) {
 
 async function setHealthDays(d: number) {
   await notifStore.updatePrefs({ healthAlertDaysAhead: d })
+}
+
+async function toggleMortalityAlert(e: Event) {
+  await notifStore.updatePrefs({ mortalityAlertEnabled: (e.target as HTMLInputElement).checked })
+}
+
+async function setMortalityThreshold(t: number) {
+  await notifStore.updatePrefs({ mortalityAlertThreshold: t })
 }
 
 function testNotification() {

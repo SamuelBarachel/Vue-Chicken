@@ -2,9 +2,11 @@ import { useNotificationStore } from '@/stores/notifications'
 import { useBatchStore } from '@/stores/batches'
 import { useEggStore } from '@/stores/eggs'
 import { useHealthStore } from '@/stores/health'
+import { useMortalityStore } from '@/stores/mortality'
 
 const TODAY_KEY = 'vc_notif_last_egg_check'
 const HEALTH_KEY = 'vc_notif_last_health_check'
+const MORTALITY_KEY = 'vc_notif_last_mortality_check'
 
 function todayStr() {
   return new Date().toISOString().split('T')[0]
@@ -47,6 +49,37 @@ export function useNotificationScheduler() {
           }
         }
         localStorage.setItem(TODAY_KEY, today)
+      }
+    }
+
+    // ── Mortality spike alert ─────────────────────────────────────
+    if (notifStore.prefs.mortalityAlertEnabled) {
+      const lastCheck = localStorage.getItem(MORTALITY_KEY)
+      if (lastCheck !== today) {
+        const mortalityStore = useMortalityStore()
+        const batchStore2 = useBatchStore()
+        const threshold = notifStore.prefs.mortalityAlertThreshold
+
+        // Group today's mortality records by batch and sum counts
+        const todayRecords = mortalityStore.records.filter(r => r.date === today)
+        const byBatch: Record<string, number> = {}
+        for (const r of todayRecords) {
+          byBatch[r.batchId] = (byBatch[r.batchId] ?? 0) + r.count
+        }
+
+        const spikes = Object.entries(byBatch).filter(([, count]) => count >= threshold)
+        if (spikes.length > 0) {
+          const lines = spikes.map(([batchId, count]) => {
+            const batch = batchStore2.batches.find(b => b.id === batchId)
+            return `${batch?.name ?? 'Unknown batch'}: ${count} bird${count !== 1 ? 's' : ''} today`
+          })
+          notifStore.showLocal(
+            `⚠️ Mortality spike detected`,
+            lines.slice(0, 3).join('\n'),
+            'mortality-spike'
+          )
+        }
+        localStorage.setItem(MORTALITY_KEY, today)
       }
     }
 

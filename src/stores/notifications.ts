@@ -8,6 +8,8 @@ export interface NotificationPrefs {
   eggReminderHour: number
   healthAlertEnabled: boolean
   healthAlertDaysAhead: number
+  mortalityAlertEnabled: boolean
+  mortalityAlertThreshold: number
 }
 
 const DEFAULTS: NotificationPrefs = {
@@ -15,6 +17,8 @@ const DEFAULTS: NotificationPrefs = {
   eggReminderHour: 18,
   healthAlertEnabled: false,
   healthAlertDaysAhead: 1,
+  mortalityAlertEnabled: false,
+  mortalityAlertThreshold: 3,
 }
 
 export const useNotificationStore = defineStore('notifications', () => {
