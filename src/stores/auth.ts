@@ -1,13 +1,5 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { auth } from '@/firebase'
-import {
-  GoogleAuthProvider,
-  signInWithPopup,
-  signOut as fbSignOut,
-  onAuthStateChanged,
-  type User,
-} from 'firebase/auth'
 
 export interface AuthUser {
   id: string
@@ -22,36 +14,46 @@ export const useAuthStore = defineStore('auth', () => {
   const ready = ref(false)
   const redirectError = ref('')
 
-  function loadUser(): Promise<void> {
-    return new Promise((resolve) => {
-      onAuthStateChanged(auth, (fbUser: User | null) => {
-        if (fbUser) {
-          user.value = {
-            id: fbUser.uid,
-            username: fbUser.displayName || fbUser.email || fbUser.uid,
-            email: fbUser.email || undefined,
-            profileImage: fbUser.photoURL || undefined,
-          }
-          uid.value = fbUser.uid
-        } else {
-          user.value = null
-          uid.value = null
+  async function loadUser(): Promise<void> {
+    try {
+      const res = await fetch('/api/auth/user')
+      const data = await res.json()
+      if (data) {
+        user.value = {
+          id: data.id,
+          username: data.username,
+          email: data.email || undefined,
+          profileImage: data.profileImage || undefined,
         }
-        ready.value = true
-        resolve()
-      })
-    })
+        uid.value = data.id
+      } else {
+        user.value = null
+        uid.value = null
+      }
+    } catch (e) {
+      console.error('Failed to load user:', e)
+      user.value = null
+      uid.value = null
+    } finally {
+      ready.value = true
+    }
   }
 
-  async function signIn() {
-    const provider = new GoogleAuthProvider()
-    await signInWithPopup(auth, provider)
+  function signIn() {
+    // Redirect to backend OIDC login flow
+    window.location.href = '/api/auth/login'
   }
 
   async function signOut() {
-    await fbSignOut(auth)
-    user.value = null
-    uid.value = null
+    try {
+      await fetch('/api/auth/logout')
+    } catch (e) {
+      console.error('Logout error:', e)
+    } finally {
+      user.value = null
+      uid.value = null
+      window.location.href = '/'
+    }
   }
 
   return { user, uid, ready, redirectError, loadUser, signIn, signOut }
